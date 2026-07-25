@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120">
+  <!-- Background pill -->
+  <rect x="0" y="0" width="320" height="120" rx="16" fill="#0A0A0A"/>
+
+  <!-- "Neno" text - bold tech style -->
+  <text x="16" y="62" font-family="Arial Black, sans-serif" font-size="52" font-weight="900"
+        letter-spacing="-1" fill="#B5D317">Neno</text>
+
+  <!-- "Smartlife" text -->
+  <text x="16" y="100" font-family="Arial Black, sans-serif" font-size="32" font-weight="900"
+        letter-spacing="-0.5" fill="#B5D317">Smartlife</text>
+
+  <!-- Underline accent -->
+  <rect x="16" y="107" width="180" height="3" rx="1.5" fill="#B5D317" opacity="0.7"/>
+
+  <!-- "GENERAL ELECTRONICS" tagline -->
+  <text x="16" y="118" font-family="Arial, sans-serif" font-size="10" font-weight="400"
+        letter-spacing="3" fill="#888888">GENERAL ELECTRONICS</text>
+
+  <!-- Circuit-node icon top-right -->
+  <circle cx="295" cy="28" r="10" fill="none" stroke="#B5D317" stroke-width="2.5"/>
+  <circle cx="295" cy="28" r="4" fill="#B5D317"/>
+  <line x1="295" y1="18" x2="295" y2="10" stroke="#B5D317" stroke-width="2"/>
+  <line x1="305" y1="28" x2="313" y2="28" stroke="#B5D317" stroke-width="2"/>
+  <line x1="285" y1="28" x2="277" y2="28" stroke="#B5D317" stroke-width="2"/>
+  <line x1="295" y1="38" x2="295" y2="46" stroke="#B5D317" stroke-width="2"/>
+  <circle cx="295" cy="9" r="2.5" fill="#B5D317" opacity="0.6"/>
+  <circle cx="314" cy="28" r="2.5" fill="#B5D317" opacity="0.6"/>
+  <circle cx="276" cy="28" r="2.5" fill="#B5D317" opacity="0.6"/>
+  <circle cx="295" cy="47" r="2.5" fill="#B5D317" opacity="0.6"/>
+</svg>

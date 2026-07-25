@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 300">
+  <!-- Doodle: Discover Electronics — phone, TV, headphones floating with signals -->
+
+  <!-- Background subtle glow -->
+  <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#B5D317" stop-opacity="0.08"/>
+    <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="360" height="300" fill="url(#g1)"/>
+
+  <!-- Smartphone center -->
+  <rect x="150" y="60" width="60" height="100" rx="10" fill="none" stroke="#B5D317" stroke-width="2.5"/>
+  <rect x="158" y="72" width="44" height="72" rx="4" fill="#B5D317" opacity="0.1"/>
+  <!-- Screen icons on phone -->
+  <rect x="162" y="76" width="16" height="12" rx="2" fill="#B5D317" opacity="0.4"/>
+  <rect x="182" y="76" width="16" height="12" rx="2" fill="#B5D317" opacity="0.4"/>
+  <rect x="162" y="92" width="16" height="12" rx="2" fill="#B5D317" opacity="0.4"/>
+  <rect x="182" y="92" width="16" height="12" rx="2" fill="#B5D317" opacity="0.4"/>
+  <rect x="162" y="108" width="36" height="8" rx="2" fill="#B5D317" opacity="0.3"/>
+  <!-- Home bar -->
+  <rect x="168" y="150" width="24" height="3" rx="1.5" fill="#B5D317" opacity="0.5"/>
+  <!-- Camera notch -->
+  <circle cx="180" cy="67" r="3" fill="#B5D317" opacity="0.4"/>
+
+  <!-- TV set - left -->
+  <rect x="30" y="90" width="90" height="60" rx="6" fill="none" stroke="#B5D317" stroke-width="2" opacity="0.7"/>
+  <rect x="38" y="97" width="74" height="46" rx="3" fill="#B5D317" opacity="0.07"/>
+  <!-- TV screen content lines -->
+  <line x1="44" y1="112" x2="90" y2="112" stroke="#B5D317" stroke-width="1.5" opacity="0.4"/>
+  <line x1="44" y1="120" x2="106" y2="120" stroke="#B5D317" stroke-width="1.5" opacity="0.4"/>
+  <line x1="44" y1="128" x2="80" y2="128" stroke="#B5D317" stroke-width="1.5" opacity="0.4"/>
+  <!-- TV stand -->
+  <rect x="68" y="150" width="14" height="10" rx="2" fill="#B5D317" opacity="0.5"/>
+  <rect x="58" y="158" width="34" height="4" rx="2" fill="#B5D317" opacity="0.4"/>
+
+  <!-- Headphones - right -->
+  <path d="M255 110 Q255 82 282 82 Q309 82 309 110" fill="none" stroke="#B5D317" stroke-width="2.5" opacity="0.8"/>
+  <rect x="248" y="108" width="14" height="22" rx="7" fill="none" stroke="#B5D317" stroke-width="2" opacity="0.8"/>
+  <rect x="302" y="108" width="14" height="22" rx="7" fill="none" stroke="#B5D317" stroke-width="2" opacity="0.8"/>
+  <circle cx="255" cy="122" r="5" fill="#B5D317" opacity="0.3"/>
+  <circle cx="309" cy="122" r="5" fill="#B5D317" opacity="0.3"/>
+
+  <!-- WiFi signal arcs top-right -->
+  <g opacity="0.5" fill="none" stroke="#B5D317">
+    <path d="M316 50 Q326 40 336 50" stroke-width="2"/>
+    <path d="M310 44 Q326 30 342 44" stroke-width="2" opacity="0.7"/>
+    <path d="M304 38 Q326 20 348 38" stroke-width="2" opacity="0.4"/>
+    <circle cx="326" cy="55" r="3" fill="#B5D317"/>
+  </g>
+
+  <!-- Bluetooth icon top-left -->
+  <g opacity="0.45" stroke="#B5D317" stroke-width="2" fill="none">
+    <line x1="30" y1="36" x2="30" y2="60"/>
+    <polyline points="22,44 38,56 30,60 30,36 38,44 22,56"/>
+  </g>
+
+  <!-- Price tag floating — generic, no real amount -->
+  <!-- Tag shape with notch on left -->
+  <path d="M152 30 L204 30 L204 54 L152 54 L144 42 Z"
+        fill="#B5D317" opacity="0.13" stroke="#B5D317" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Tie hole -->
+  <circle cx="152" cy="42" r="2.5" fill="#B5D317" opacity="0.5"/>
+  <!-- Redacted amount bars -->
+  <rect x="158" y="36" width="28" height="5" rx="2.5" fill="#B5D317" opacity="0.55"/>
+  <!-- "FCFA" label -->
+  <text x="176" y="50" font-family="Arial, sans-serif" font-size="8" font-weight="700"
+        text-anchor="middle" fill="#B5D317" opacity="0.7">FCFA</text>
+
+  <!-- Sparkle dots scattered -->
+  <circle cx="130" cy="50" r="2.5" fill="#B5D317" opacity="0.4"/>
+  <circle cx="230" cy="60" r="2" fill="#B5D317" opacity="0.35"/>
+  <circle cx="70" cy="70" r="2" fill="#B5D317" opacity="0.3"/>
+  <circle cx="300" cy="170" r="2.5" fill="#B5D317" opacity="0.35"/>
+  <circle cx="40" cy="200" r="2" fill="#B5D317" opacity="0.25"/>
+
+  <!-- Search magnifier at bottom center -->
+  <circle cx="180" cy="240" r="22" fill="none" stroke="#B5D317" stroke-width="2.5" opacity="0.5"/>
+  <line x1="196" y1="256" x2="210" y2="270" stroke="#B5D317" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <!-- Horizontal search line inside -->
+  <line x1="168" y1="240" x2="192" y2="240" stroke="#B5D317" stroke-width="1.5" opacity="0.4"/>
+  <line x1="168" y1="246" x2="186" y2="246" stroke="#B5D317" stroke-width="1.5" opacity="0.4"/>
+</svg>
