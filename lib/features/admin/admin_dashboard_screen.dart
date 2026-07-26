@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/data/mock_admin_requests.dart';
 import '../../shared/models/admin_request.dart';
+import 'admin_manage_categories_screen.dart';
 import 'admin_products_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -808,8 +809,282 @@ class _SettingsTab extends StatelessWidget {
   const _SettingsTab();
 
   @override
-  Widget build(BuildContext context) =>
-      const _PlaceholderView(label: 'Settings', icon: Icons.settings_rounded);
+  Widget build(BuildContext context) => const _AdminSettingsScreen();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Settings Screen
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AdminSettingsScreen extends StatelessWidget {
+  const _AdminSettingsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        shadowColor: AppColors.border,
+        primary: false,
+        title: Text(
+          'Settings',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+        children: [
+          _SettingsSection(
+            title: 'Catalog',
+            items: [
+              _SettingsItem(
+                icon: Icons.category_rounded,
+                label: 'Manage Categories',
+                subtitle: 'Add, edit or remove product categories',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const AdminManageCategoriesScreen())),
+              ),
+              _SettingsItem(
+                icon: Icons.local_offer_rounded,
+                label: 'Promotions & Discounts',
+                subtitle: 'Create and manage sale campaigns',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.inventory_2_outlined,
+                label: 'Inventory Alerts',
+                subtitle: 'Set low-stock notification thresholds',
+                onTap: () {},
+                isLast: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SettingsSection(
+            title: 'Orders & Payments',
+            items: [
+              _SettingsItem(
+                icon: Icons.receipt_long_outlined,
+                label: 'Order Management',
+                subtitle: 'View and process customer orders',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.payment_rounded,
+                label: 'Payment Methods',
+                subtitle: 'Configure accepted payment gateways',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.local_shipping_outlined,
+                label: 'Shipping & Delivery',
+                subtitle: 'Set shipping zones and delivery fees',
+                onTap: () {},
+                isLast: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SettingsSection(
+            title: 'Users & Permissions',
+            items: [
+              _SettingsItem(
+                icon: Icons.people_alt_outlined,
+                label: 'Customer Accounts',
+                subtitle: 'View, search and manage customers',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.admin_panel_settings_outlined,
+                label: 'Admin Roles',
+                subtitle: 'Control staff access and permissions',
+                onTap: () {},
+                isLast: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SettingsSection(
+            title: 'Store',
+            items: [
+              _SettingsItem(
+                icon: Icons.storefront_outlined,
+                label: 'Store Profile',
+                subtitle: 'Update store name, logo and contact info',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.notifications_outlined,
+                label: 'Notifications',
+                subtitle: 'Push and email notification preferences',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.bar_chart_rounded,
+                label: 'Analytics & Reports',
+                subtitle: 'Sales data, traffic and performance',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.language_rounded,
+                label: 'Language & Region',
+                subtitle: 'Default language, currency and timezone',
+                onTap: () {},
+                isLast: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SettingsSection(
+            title: 'System',
+            items: [
+              _SettingsItem(
+                icon: Icons.backup_outlined,
+                label: 'Backup & Export',
+                subtitle: 'Export catalogue data as CSV or JSON',
+                onTap: () {},
+              ),
+              _SettingsItem(
+                icon: Icons.info_outline_rounded,
+                label: 'About',
+                subtitle: 'App version, licenses and support',
+                onTap: () {},
+                isLast: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<_SettingsItem> items;
+
+  const _SettingsSection({required this.title, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textMuted,
+              letterSpacing: 0.9,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x08000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2)),
+            ],
+          ),
+          child: Column(children: items),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings Item (row)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SettingsItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool isLast;
+
+  const _SettingsItem({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: AppColors.primary, size: 19),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.textMuted, size: 20),
+              ],
+            ),
+          ),
+        ),
+        if (!isLast)
+          const Divider(
+              height: 1, indent: 68, endIndent: 0, color: AppColors.divider),
+      ],
+    );
+  }
 }
 
 class _PlaceholderView extends StatelessWidget {
