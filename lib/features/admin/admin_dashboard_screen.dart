@@ -8,6 +8,7 @@ import '../../shared/data/mock_admin_requests.dart';
 import '../../shared/models/admin_request.dart';
 import 'admin_manage_categories_screen.dart';
 import 'admin_products_screen.dart';
+import 'admin_requests_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin Dashboard Screen
@@ -23,34 +24,25 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _navIndex = 0;
 
-  // Local copy so we can mutate status in place
-  late final List<AdminRequest> _requests = MockAdminRequests.all
-      .map((r) => AdminRequest(
-            id: r.id,
-            productName: r.productName,
-            customerName: r.customerName,
-            timeAgo: r.timeAgo,
-            imageUrl: r.imageUrl,
-            status: r.status,
-          ))
-      .toList();
+  // Share the same list with the RequestsTab so approvals in overview
+  // are reflected there too.
+  late final List<AdminRequest> _requests = List.from(MockAdminRequests.all);
 
   void _approve(String id) {
     setState(() {
       final req = _requests.firstWhere((r) => r.id == id);
-      req.status = RequestStatus.approved;
+      req.status = CustomerRequestStatus.confirmed;
     });
   }
 
   void _dismiss(String id) {
     setState(() {
       final req = _requests.firstWhere((r) => r.id == id);
-      req.status = RequestStatus.rejected;
+      req.status = CustomerRequestStatus.rejected;
     });
   }
 
-  int get _pendingCount =>
-      _requests.where((r) => r.status == RequestStatus.pending).length;
+  int get _pendingCount => _requests.where((r) => r.isPending).length;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +59,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onApprove: _approve,
             onDismiss: _dismiss,
             onBackToStore: () => Navigator.of(context).pop(),
+            onViewAll: () => setState(() => _navIndex = 1),
           ),
           const _RequestsTab(),
           const AdminProductsScreen(),
@@ -137,6 +130,7 @@ class _OverviewTab extends StatelessWidget {
   final void Function(String) onApprove;
   final void Function(String) onDismiss;
   final VoidCallback onBackToStore;
+  final VoidCallback onViewAll;
 
   const _OverviewTab({
     required this.requests,
@@ -144,6 +138,7 @@ class _OverviewTab extends StatelessWidget {
     required this.onApprove,
     required this.onDismiss,
     required this.onBackToStore,
+    required this.onViewAll,
   });
 
   @override
@@ -264,7 +259,7 @@ class _OverviewTab extends StatelessWidget {
                     ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: onViewAll,
                       child: Row(
                         children: [
                           Text(
@@ -520,8 +515,8 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPending = request.status == RequestStatus.pending;
-    final isApproved = request.status == RequestStatus.approved;
+    final isPending = request.isPending;
+    final isConfirmed = request.isConfirmed;
 
     return Container(
       decoration: BoxDecoration(
@@ -657,13 +652,12 @@ class _RequestCard extends StatelessWidget {
                     ),
                   ),
                 ] else ...[
-                  // Resolved — show label only
                   Text(
-                    isApproved ? 'Approved ✓' : 'Rejected',
+                    isConfirmed ? 'Confirmed ✓' : 'Rejected',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isApproved ? AppColors.success : AppColors.error,
+                      color: isConfirmed ? AppColors.success : AppColors.error,
                     ),
                   ),
                 ],
@@ -681,35 +675,37 @@ class _RequestCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _StatusChip extends StatelessWidget {
-  final RequestStatus status;
+  final CustomerRequestStatus status;
   const _StatusChip({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final isPending = status == RequestStatus.pending;
-    final isApproved = status == RequestStatus.approved;
+    final isPending = status == CustomerRequestStatus.newRequest ||
+        status == CustomerRequestStatus.inDiscussion;
+    final isConfirmed = status == CustomerRequestStatus.confirmed;
 
     final Color bg = isPending
         ? const Color(0xFFEFF3FF)
-        : isApproved
+        : isConfirmed
             ? const Color(0xFFECFDF5)
             : const Color(0xFFFEF2F2);
 
     final Color textColor = isPending
         ? const Color(0xFF3B82F6)
-        : isApproved
+        : isConfirmed
             ? AppColors.success
             : AppColors.error;
 
-    final String label = isPending
-        ? 'Pending'
-        : isApproved
-            ? 'Approved'
-            : 'Rejected';
+    final String label = switch (status) {
+      CustomerRequestStatus.newRequest => 'New',
+      CustomerRequestStatus.inDiscussion => 'In Discussion',
+      CustomerRequestStatus.confirmed => 'Confirmed',
+      CustomerRequestStatus.rejected => 'Rejected',
+    };
 
     final IconData icon = isPending
         ? Icons.hourglass_top_rounded
-        : isApproved
+        : isConfirmed
             ? Icons.check_circle_outline_rounded
             : Icons.cancel_outlined;
 
@@ -801,8 +797,7 @@ class _RequestsTab extends StatelessWidget {
   const _RequestsTab();
 
   @override
-  Widget build(BuildContext context) => const _PlaceholderView(
-      label: 'Requests', icon: Icons.receipt_long_rounded);
+  Widget build(BuildContext context) => const AdminRequestsScreen();
 }
 
 class _SettingsTab extends StatelessWidget {
@@ -1083,47 +1078,6 @@ class _SettingsItem extends StatelessWidget {
           const Divider(
               height: 1, indent: 68, endIndent: 0, color: AppColors.divider),
       ],
-    );
-  }
-}
-
-class _PlaceholderView extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  const _PlaceholderView({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
-          ),
-        ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: AppColors.border),
-            const SizedBox(height: 12),
-            Text(
-              'Coming soon',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
