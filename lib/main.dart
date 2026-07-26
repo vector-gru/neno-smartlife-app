@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'core/l10n/app_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'routes/app_router.dart';
@@ -7,13 +8,11 @@ import 'routes/app_router.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock to portrait orientation
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Transparent status/nav bars
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.transparent,
@@ -27,12 +26,18 @@ class NenoSmartLifeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Neno SmartLife',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
-      onGenerateRoute: AppRouter.generateRoute,
+    return LocaleProvider(
+      child: Builder(
+        builder: (context) {
+          return MaterialApp(
+            title: 'Neno SmartLife',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: const SplashScreen(),
+            onGenerateRoute: AppRouter.generateRoute,
+          );
+        },
+      ),
     );
   }
 }

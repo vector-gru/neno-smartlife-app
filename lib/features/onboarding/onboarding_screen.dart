@@ -4,9 +4,46 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/app_strings.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../routes/app_router.dart';
 
+// ─── Page data model (strings resolved at build time via l10n closures) ────────
+class _OnboardingPage {
+  final String svgAsset;
+  final String Function(AppLocalizations) title;
+  final String Function(AppLocalizations) subtitle;
+  final Color bgColor;
+
+  const _OnboardingPage({
+    required this.svgAsset,
+    required this.title,
+    required this.subtitle,
+    required this.bgColor,
+  });
+}
+
+final _pages = <_OnboardingPage>[
+  _OnboardingPage(
+    svgAsset: 'assets/svg/onboarding_1.svg',
+    title: (l) => l.onboarding1Title,
+    subtitle: (l) => l.onboarding1Subtitle,
+    bgColor: AppColors.onboardingBg1,
+  ),
+  _OnboardingPage(
+    svgAsset: 'assets/svg/onboarding_2.svg',
+    title: (l) => l.onboarding2Title,
+    subtitle: (l) => l.onboarding2Subtitle,
+    bgColor: AppColors.onboardingBg2,
+  ),
+  _OnboardingPage(
+    svgAsset: 'assets/svg/onboarding_3.svg',
+    title: (l) => l.onboarding3Title,
+    subtitle: (l) => l.onboarding3Subtitle,
+    bgColor: AppColors.onboardingBg3,
+  ),
+];
+
+// ─── OnboardingScreen ──────────────────────────────────────────────────────────
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -17,30 +54,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
-  final List<_OnboardingPage> _pages = [
-    const _OnboardingPage(
-      svgAsset: 'assets/svg/onboarding_1.svg',
-      title: AppStrings.onboarding1Title,
-      subtitle: AppStrings.onboarding1Subtitle,
-      bgColor: AppColors.onboardingBg1,
-      accentColor: AppColors.primary,
-    ),
-    const _OnboardingPage(
-      svgAsset: 'assets/svg/onboarding_2.svg',
-      title: AppStrings.onboarding2Title,
-      subtitle: AppStrings.onboarding2Subtitle,
-      bgColor: AppColors.onboardingBg2,
-      accentColor: AppColors.primary,
-    ),
-    const _OnboardingPage(
-      svgAsset: 'assets/svg/onboarding_3.svg',
-      title: AppStrings.onboarding3Title,
-      subtitle: AppStrings.onboarding3Subtitle,
-      bgColor: AppColors.onboardingBg3,
-      accentColor: AppColors.primary,
-    ),
-  ];
 
   @override
   void initState() {
@@ -68,12 +81,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _finish() {
-    AppRouter.completeOnboarding(context);
-  }
+  void _finish() => AppRouter.completeOnboarding(context);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final size = MediaQuery.of(context).size;
     final isLast = _currentPage == _pages.length - 1;
 
@@ -81,16 +93,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Page view
+          // ── Page view ────────────────────────────────────────────────────
           PageView.builder(
             controller: _pageController,
             itemCount: _pages.length,
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (context, i) =>
-                _OnboardingPageWidget(page: _pages[i], size: size),
+                _OnboardingPageWidget(page: _pages[i], size: size, l10n: l10n),
           ),
 
-          // Top bar: logo + skip
+          // ── Top bar: logo + skip ─────────────────────────────────────────
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -120,7 +132,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Neno SmartLife',
+                        l10n.appName,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -129,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ],
                   ),
-                  // Skip
+                  // Skip button
                   if (!isLast)
                     GestureDetector(
                       onTap: _finish,
@@ -137,7 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 4, vertical: 4),
                         child: Text(
-                          AppStrings.skip,
+                          l10n.skip,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -151,7 +163,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          // Bottom controls
+          // ── Bottom controls ───────────────────────────────────────────────
           Positioned(
             left: 0,
             right: 0,
@@ -174,7 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Page dots
+                  // Dots
                   SmoothPageIndicator(
                     controller: _pageController,
                     count: _pages.length,
@@ -188,7 +200,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  // CTA button
+                  // CTA
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -203,7 +215,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        isLast ? AppStrings.getStarted : AppStrings.next,
+                        isLast ? l10n.getStarted : l10n.next,
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -222,29 +234,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// ─── Page data model ───────────────────────────────────────────────────────────
-class _OnboardingPage {
-  final String svgAsset;
-  final String title;
-  final String subtitle;
-  final Color bgColor;
-  final Color accentColor;
-
-  const _OnboardingPage({
-    required this.svgAsset,
-    required this.title,
-    required this.subtitle,
-    required this.bgColor,
-    required this.accentColor,
-  });
-}
-
 // ─── Single page widget ────────────────────────────────────────────────────────
 class _OnboardingPageWidget extends StatelessWidget {
   final _OnboardingPage page;
   final Size size;
+  final AppLocalizations l10n;
 
-  const _OnboardingPageWidget({required this.page, required this.size});
+  const _OnboardingPageWidget({
+    required this.page,
+    required this.size,
+    required this.l10n,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -252,14 +252,13 @@ class _OnboardingPageWidget extends StatelessWidget {
       color: page.bgColor,
       child: Column(
         children: [
-          // Doodle illustration — takes upper 55% of screen
+          // Illustration — upper 55%
           SizedBox(
             height: size.height * 0.55,
             width: double.infinity,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Subtle radial glow
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -274,7 +273,6 @@ class _OnboardingPageWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                // SVG doodle
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 100, 24, 20),
                   child: SvgPicture.asset(
@@ -293,7 +291,7 @@ class _OnboardingPageWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    page.title,
+                    page.title(l10n),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 26,
@@ -304,7 +302,7 @@ class _OnboardingPageWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    page.subtitle,
+                    page.subtitle(l10n),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 15,
