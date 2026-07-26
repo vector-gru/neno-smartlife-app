@@ -8,6 +8,9 @@ class Product {
   final String name;
   final String description;
   final double price;
+
+  /// The original (before-discount) price. Null means no discount is active.
+  final double? originalPrice;
   final String currency;
   final String category;
   final List<String> imageUrls;
@@ -27,6 +30,7 @@ class Product {
     required this.name,
     required this.description,
     required this.price,
+    this.originalPrice,
     this.currency = 'FCFA',
     required this.category,
     required this.imageUrls,
@@ -49,8 +53,27 @@ class Product {
   bool get isLimitedStock => stockStatus == 'limited';
   bool get isOutOfStock => stockStatus == 'out_of_stock';
 
+  /// True when an original price is set and is actually higher than the sale price.
+  bool get hasDiscount =>
+      originalPrice != null && originalPrice! > price && price > 0;
+
+  /// Rounded percentage drop, e.g. 18. Returns 0 when no discount.
+  int get discountPercent {
+    if (!hasDiscount) return 0;
+    return (((originalPrice! - price) / originalPrice!) * 100).round();
+  }
+
   String get formattedPrice {
     final formatted = price.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
+    return '$formatted $currency';
+  }
+
+  String? get formattedOriginalPrice {
+    if (!hasDiscount) return null;
+    final formatted = originalPrice!.toStringAsFixed(0).replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (m) => '${m[1]},',
         );

@@ -430,6 +430,38 @@ class _FavouriteCard extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
+                  if (p.hasDiscount)
+                    Row(
+                      children: [
+                        Text(
+                          p.formattedOriginalPrice!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textMuted,
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            '-${p.discountPercent}%',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 10),
                   // CTA button
                   _FavCTA(product: p, l10n: l10n, isOutOfStock: isOutOfStock),

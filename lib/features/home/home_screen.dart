@@ -252,6 +252,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
+        // Admin dashboard shortcut
+        IconButton(
+          tooltip: 'Admin',
+          icon: const Icon(Icons.admin_panel_settings_outlined,
+              color: AppColors.textPrimary, size: 22),
+          onPressed: () => AppRouter.goToAdminDashboard(context),
+        ),
       ],
     );
   }
@@ -669,6 +676,28 @@ class _ProductCardState extends State<_ProductCard> {
                     left: 12,
                     child: ProductBadge(label: p.badge),
                   ),
+                // Discount % badge — bottom right of image
+                if (p.hasDiscount)
+                  Positioned(
+                    bottom: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Text(
+                        '-${p.discountPercent}%',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
                 // Condition pill — bottom left of image
                 Positioned(
                   bottom: 10,
@@ -731,13 +760,31 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        p.formattedPrice,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                      // Price — sale + optional strikethrough
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            p.formattedPrice,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          if (p.hasDiscount) ...[
+                            Text(
+                              p.formattedOriginalPrice!,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textMuted,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),

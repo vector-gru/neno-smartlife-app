@@ -234,14 +234,52 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           const SizedBox(height: 6),
           // Price + condition
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                p.formattedPrice,
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primary,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.formattedPrice,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  if (p.hasDiscount)
+                    Row(
+                      children: [
+                        Text(
+                          p.formattedOriginalPrice!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textMuted,
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '-${p.discountPercent}%',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
               ),
               const SizedBox(width: 10),
               ConditionBadge(condition: p.condition),
@@ -605,6 +643,16 @@ class _FrequentlyBoughtCard extends StatelessWidget {
                       color: AppColors.primary,
                     ),
                   ),
+                  if (product.hasDiscount)
+                    Text(
+                      product.formattedOriginalPrice!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: AppColors.textMuted,
+                      ),
+                    ),
                   const SizedBox(height: 5),
                   ConditionBadge(condition: product.condition, compact: true),
                 ],

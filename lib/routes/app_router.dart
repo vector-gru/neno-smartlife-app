@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/admin/admin_dashboard_screen.dart';
 import '../features/cart/cart_screen.dart';
 import '../features/favorites/favourites_screen.dart';
 import '../features/home/home_screen.dart';
@@ -17,6 +18,7 @@ class AppRouter {
   static const String cart = '/cart';
   static const String favourites = '/favourites';
   static const String orders = '/orders';
+  static const String adminDashboard = '/admin';
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
 
@@ -75,6 +77,16 @@ class AppRouter {
     );
   }
 
+  /// Navigate to the admin dashboard.
+  static void goToAdminDashboard(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AdminDashboardScreen(),
+        settings: const RouteSettings(name: adminDashboard),
+      ),
+    );
+  }
+
   // ── Named route generator ──────────────────────────────────────────────────
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -88,6 +100,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const FavouritesScreen());
       case orders:
         return MaterialPageRoute(builder: (_) => const OrdersScreen());
+      case adminDashboard:
+        return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

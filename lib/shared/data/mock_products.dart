@@ -15,6 +15,7 @@ class MockProducts {
           'a titanium frame, and a pro-grade 200MP camera system. Experience the '
           'peak of mobile technology.',
       price: 850000,
+      originalPrice: 1050000,
       category: 'Phones',
       imageUrls: [
         'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600',
@@ -44,6 +45,7 @@ class MockProducts {
           'Industry-leading noise cancellation, exceptional sound quality, '
           'and all-day comfort with up to 30-hour battery life.',
       price: 220000,
+      originalPrice: 275000,
       category: 'Headphones',
       imageUrls: [
         'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600',
@@ -152,6 +154,7 @@ class MockProducts {
           'The most advanced iPad ever. Ultra Retina XDR OLED display, M4 chip, '
           'and Apple Pencil Pro support.',
       price: 920000,
+      originalPrice: 1100000,
       category: 'Tablets',
       imageUrls: [
         'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600',

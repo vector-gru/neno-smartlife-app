@@ -114,25 +114,25 @@ class MockOrders {
   static final List<AppOrder> all = [
     AppOrder(
       id: 'ORD-7721',
-      items: [CartItem(product: _macbookPro, quantity: 1)],
+      items: [const CartItem(product: _macbookPro, quantity: 1)],
       purchasedAt: DateTime(2023, 9, 15),
       status: OrderStatus.completed,
     ),
     AppOrder(
       id: 'ORD-6504',
-      items: [CartItem(product: _appleWatchUltra, quantity: 1)],
+      items: [const CartItem(product: _appleWatchUltra, quantity: 1)],
       purchasedAt: DateTime(2023, 8, 2),
       status: OrderStatus.completed,
     ),
     AppOrder(
       id: 'ORD-8812',
-      items: [CartItem(product: _galaxyS24, quantity: 1)],
+      items: [const CartItem(product: _galaxyS24, quantity: 1)],
       purchasedAt: DateTime(2024, 3, 10),
       status: OrderStatus.pending,
     ),
     AppOrder(
       id: 'ORD-9001',
-      items: [CartItem(product: _sonyHeadphones, quantity: 2)],
+      items: [const CartItem(product: _sonyHeadphones, quantity: 2)],
       purchasedAt: DateTime(2024, 5, 22),
       status: OrderStatus.processing,
     ),
