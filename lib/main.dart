@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/l10n/app_localizations.dart';
+import 'core/state/app_state.dart';
 import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'routes/app_router.dart';
@@ -26,17 +27,19 @@ class NenoSmartLifeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LocaleProvider(
-      child: Builder(
-        builder: (context) {
-          return MaterialApp(
-            title: 'Neno SmartLife',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            home: const SplashScreen(),
-            onGenerateRoute: AppRouter.generateRoute,
-          );
-        },
+    return AppStateProvider(
+      child: LocaleProvider(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              title: 'Neno SmartLife',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              home: const SplashScreen(),
+              onGenerateRoute: AppRouter.generateRoute,
+            );
+          },
+        ),
       ),
     );
   }

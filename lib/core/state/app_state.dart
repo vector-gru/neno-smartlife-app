@@ -1,0 +1,168 @@
+// Lightweight app-wide state manager using InheritedWidget + StatefulWidget.
+// Holds cart items, favourites, and orders — no external packages needed.
+// Mirrors the same pattern already used by LocaleProvider in app_localizations.dart.
+
+import 'package:flutter/material.dart';
+import '../../shared/models/cart_item.dart';
+import '../../shared/models/order.dart';
+import '../../shared/models/product.dart';
+
+// ─── AppState ──────────────────────────────────────────────────────────────────
+class AppStateProvider extends StatefulWidget {
+  final Widget child;
+  const AppStateProvider({super.key, required this.child});
+
+  @override
+  State<AppStateProvider> createState() => AppStateProviderState();
+
+  static AppStateProviderState of(BuildContext context) {
+    final state = context.findAncestorStateOfType<AppStateProviderState>();
+    assert(state != null, 'No AppStateProvider found in widget tree');
+    return state!;
+  }
+}
+
+class AppStateProviderState extends State<AppStateProvider> {
+  // ── Cart ───────────────────────────────────────────────────────────────────
+  final List<CartItem> _cartItems = [];
+
+  List<CartItem> get cartItems => List.unmodifiable(_cartItems);
+
+  int get cartCount => _cartItems.fold(0, (sum, i) => sum + i.quantity);
+
+  double get cartTotal => _cartItems.fold(0.0, (sum, i) => sum + i.lineTotal);
+
+  String get cartFormattedTotal {
+    final formatted = cartTotal.toStringAsFixed(0).replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]},',
+        );
+    return '$formatted FCFA';
+  }
+
+  void addToCart(Product product, {int quantity = 1, String variant = ''}) {
+    setState(() {
+      final index = _cartItems.indexWhere((i) => i.product.id == product.id);
+      if (index >= 0) {
+        _cartItems[index] = _cartItems[index].copyWith(
+          quantity: _cartItems[index].quantity + quantity,
+        );
+      } else {
+        _cartItems.add(
+          CartItem(product: product, quantity: quantity, variant: variant),
+        );
+      }
+    });
+  }
+
+  void removeFromCart(String productId) {
+    setState(() {
+      _cartItems.removeWhere((i) => i.product.id == productId);
+    });
+  }
+
+  void updateCartQuantity(String productId, int quantity) {
+    setState(() {
+      if (quantity <= 0) {
+        _cartItems.removeWhere((i) => i.product.id == productId);
+        return;
+      }
+      final index = _cartItems.indexWhere((i) => i.product.id == productId);
+      if (index >= 0) {
+        _cartItems[index] = _cartItems[index].copyWith(quantity: quantity);
+      }
+    });
+  }
+
+  void clearCart() => setState(() => _cartItems.clear());
+
+  bool isInCart(String productId) =>
+      _cartItems.any((i) => i.product.id == productId);
+
+  // ── Favourites ─────────────────────────────────────────────────────────────
+  final List<Product> _favourites = [];
+
+  List<Product> get favourites => List.unmodifiable(_favourites);
+
+  bool isFavourite(String productId) =>
+      _favourites.any((p) => p.id == productId);
+
+  void toggleFavourite(Product product) {
+    setState(() {
+      final index = _favourites.indexWhere((p) => p.id == product.id);
+      if (index >= 0) {
+        _favourites.removeAt(index);
+      } else {
+        _favourites.add(product);
+      }
+    });
+  }
+
+  void removeFavourite(String productId) {
+    setState(() => _favourites.removeWhere((p) => p.id == productId));
+  }
+
+  // ── Orders ─────────────────────────────────────────────────────────────────
+  final List<AppOrder> _orders = List.from(MockOrders.all);
+
+  List<AppOrder> get orders => List.unmodifiable(_orders);
+
+  List<AppOrder> get pendingOrders =>
+      _orders.where((o) => o.isPending || o.isProcessing).toList();
+
+  List<AppOrder> get completedOrders =>
+      _orders.where((o) => o.isCompleted).toList();
+
+  /// Converts the current cart into a new pending order and clears the cart.
+  void submitOrder() {
+    if (_cartItems.isEmpty) return;
+    setState(() {
+      final orderId = 'ORD-${DateTime.now().millisecondsSinceEpoch % 100000}';
+      _orders.insert(
+        0,
+        AppOrder(
+          id: orderId,
+          items: List.from(_cartItems),
+          purchasedAt: DateTime.now(),
+          status: OrderStatus.pending,
+        ),
+      );
+      _cartItems.clear();
+    });
+  }
+
+  /// Clears all orders, favourites, and cart — used from the Account screen.
+  void clearHistory() {
+    setState(() {
+      _cartItems.clear();
+      _favourites.clear();
+      _orders.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _InheritedAppState(
+      state: this,
+      child: widget.child,
+    );
+  }
+}
+
+// ─── InheritedWidget shell ────────────────────────────────────────────────────
+class _InheritedAppState extends InheritedWidget {
+  final AppStateProviderState state;
+
+  const _InheritedAppState({
+    required this.state,
+    required super.child,
+  });
+
+  @override
+  bool updateShouldNotify(_InheritedAppState old) => true;
+}
+
+// ─── Extension shorthand ──────────────────────────────────────────────────────
+extension BuildContextAppState on BuildContext {
+  AppStateProviderState get appState => AppStateProvider.of(this);
+}

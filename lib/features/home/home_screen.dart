@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/state/app_state.dart';
+import '../../features/orders/orders_screen.dart';
+import '../../features/profile/account_screen.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/category_chip.dart';
@@ -100,30 +103,48 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = context.l10n;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
+    // Tab 0 = Home (uses shell AppBar)
+    // Tabs 1, 2, 3 carry their own AppBars inside — shell AppBar is hidden.
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      appBar: _buildAppBar(l10n),
-      body: Column(
+      appBar: _bottomNavIndex == 0 ? _buildAppBar(l10n) : null,
+      body: IndexedStack(
+        index: _bottomNavIndex,
         children: [
-          _buildSearchBar(l10n),
-          _buildCategoryRow(l10n),
-          Expanded(
-            child: _filteredProducts.isEmpty
-                ? _buildEmpty(l10n)
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
-                    itemCount: _filteredProducts.length + 1,
-                    separatorBuilder: (_, i) => i == 0
-                        ? const SizedBox.shrink()
-                        : const SizedBox(height: 16),
-                    itemBuilder: (context, i) {
-                      if (i == 0) return _buildPromoBannerSection(l10n);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _ProductCard(product: _filteredProducts[i - 1]),
-                      );
-                    },
-                  ),
+          // ── Tab 0: Home ────────────────────────────────────────────────────
+          Column(
+            children: [
+              _buildSearchBar(l10n),
+              _buildCategoryRow(l10n),
+              Expanded(
+                child: _filteredProducts.isEmpty
+                    ? _buildEmpty(l10n)
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+                        itemCount: _filteredProducts.length + 1,
+                        separatorBuilder: (_, i) => i == 0
+                            ? const SizedBox.shrink()
+                            : const SizedBox(height: 16),
+                        itemBuilder: (context, i) {
+                          if (i == 0) return _buildPromoBannerSection(l10n);
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child:
+                                _ProductCard(product: _filteredProducts[i - 1]),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+          // ── Tab 1: Categories (placeholder) ───────────────────────────────
+          const _CategoriesPlaceholder(),
+          // ── Tab 2: Orders ──────────────────────────────────────────────────
+          const OrdersScreen(),
+          // ── Tab 3: Account ─────────────────────────────────────────────────
+          AccountScreen(
+            onGoToOrders: () => setState(() => _bottomNavIndex = 2),
+            onGoToWishlist: () => AppRouter.goToFavourites(context),
           ),
         ],
       ),
@@ -134,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ─── App bar ──────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
     final lang = LocaleProvider.of(context).language;
+    final cartCount = context.appState.cartCount;
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -206,11 +228,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        // Cart
-        IconButton(
-          icon: const Icon(Icons.shopping_cart_outlined,
-              color: AppColors.textPrimary, size: 22),
-          onPressed: () {},
+        // Cart icon with live badge
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.shopping_cart_outlined,
+                  color: AppColors.textPrimary, size: 22),
+              onPressed: () => AppRouter.goToCart(context),
+            ),
+            if (cartCount > 0)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
     );
@@ -569,12 +609,12 @@ class _ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<_ProductCard> {
-  bool _isFavourite = false;
-
   @override
   Widget build(BuildContext context) {
     final p = widget.product;
     final l10n = context.l10n;
+    final state = context.appState;
+    final isFavourite = state.isFavourite(p.id);
 
     return GestureDetector(
       onTap: () => AppRouter.goToProduct(context, p),
@@ -640,7 +680,7 @@ class _ProductCardState extends State<_ProductCard> {
                   top: 8,
                   right: 8,
                   child: GestureDetector(
-                    onTap: () => setState(() => _isFavourite = !_isFavourite),
+                    onTap: () => state.toggleFavourite(p),
                     child: Container(
                       width: 34,
                       height: 34,
@@ -655,13 +695,12 @@ class _ProductCardState extends State<_ProductCard> {
                         ],
                       ),
                       child: Icon(
-                        _isFavourite
+                        isFavourite
                             ? Icons.favorite_rounded
                             : Icons.favorite_border_rounded,
                         size: 18,
-                        color: _isFavourite
-                            ? AppColors.error
-                            : AppColors.textMuted,
+                        color:
+                            isFavourite ? AppColors.error : AppColors.textMuted,
                       ),
                     ),
                   ),
@@ -733,7 +772,27 @@ class _ProductCardState extends State<_ProductCard> {
                         child: SizedBox(
                           height: 42,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              state.addToCart(p);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Added to cart!',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  backgroundColor: AppColors.primaryDark,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  margin: const EdgeInsets.all(16),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.background,
@@ -754,18 +813,39 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          border:
-                              Border.all(color: AppColors.primary, width: 1.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 18,
-                          color: AppColors.primary,
+                      GestureDetector(
+                        onTap: () => AppRouter.goToCart(context),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: AppColors.primary, width: 1.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(
+                                Icons.shopping_cart_outlined,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              if (state.isInCart(p.id))
+                                Positioned(
+                                  top: 7,
+                                  right: 7,
+                                  child: Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.error,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -823,6 +903,46 @@ class _TimeTag extends StatelessWidget {
           fontWeight: FontWeight.w400,
           color: AppColors.textMuted,
         ),
+      ),
+    );
+  }
+}
+
+// ─── Categories placeholder ────────────────────────────────────────────────────
+// Temporary — replace with a real CategoriesScreen when built.
+class _CategoriesPlaceholder extends StatelessWidget {
+  const _CategoriesPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.grid_view_rounded,
+            size: 64,
+            color: AppColors.textMuted.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.navCategories,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Coming soon',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
       ),
     );
   }

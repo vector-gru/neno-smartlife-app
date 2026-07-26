@@ -142,6 +142,164 @@ const Map<String, Map<AppLanguage, String>> _strings = {
         'Dites-nous ce dont vous avez besoin — on s\'occupe du reste.',
   },
   'shopNow': {AppLanguage.en: 'Shop Now', AppLanguage.fr: 'Acheter Maintenant'},
+
+  // ── Cart ──────────────────────────────────────────────────────────────────
+  'cartTitle': {AppLanguage.en: 'Shopping Cart', AppLanguage.fr: 'Panier'},
+  'yourCart': {AppLanguage.en: 'Your Cart', AppLanguage.fr: 'Votre Panier'},
+  'cartEmpty': {
+    AppLanguage.en: 'Your cart is empty',
+    AppLanguage.fr: 'Votre panier est vide',
+  },
+  'cartEmptySub': {
+    AppLanguage.en: 'Add products you want to request.',
+    AppLanguage.fr: 'Ajoutez des produits que vous souhaitez demander.',
+  },
+  'cartSummary': {AppLanguage.en: 'Summary', AppLanguage.fr: 'Récapitulatif'},
+  'cartItems': {AppLanguage.en: 'Items', AppLanguage.fr: 'Articles'},
+  'cartTotal': {AppLanguage.en: 'Total', AppLanguage.fr: 'Total'},
+  'cartPaymentNote': {
+    AppLanguage.en:
+        'Payment and delivery will be arranged after request submission.',
+    AppLanguage.fr:
+        'Le paiement et la livraison seront arrangés après la soumission de la demande.',
+  },
+  'requestPurchase': {
+    AppLanguage.en: 'Request Purchase',
+    AppLanguage.fr: 'Demander l\'Achat',
+  },
+  'removeItem': {AppLanguage.en: 'Remove', AppLanguage.fr: 'Supprimer'},
+  'cartVariant': {AppLanguage.en: 'Variant', AppLanguage.fr: 'Variante'},
+
+  // ── Favourites ────────────────────────────────────────────────────────────
+  'favTitle': {AppLanguage.en: 'My Favorites', AppLanguage.fr: 'Mes Favoris'},
+  'savedItems': {
+    AppLanguage.en: 'Saved Items',
+    AppLanguage.fr: 'Éléments Sauvegardés'
+  },
+  'favEmpty': {
+    AppLanguage.en: 'No saved items yet',
+    AppLanguage.fr: 'Aucun élément sauvegardé',
+  },
+  'favEmptySub': {
+    AppLanguage.en: 'Tap the heart on any product to save it here.',
+    AppLanguage.fr:
+        'Appuyez sur le cœur d\'un produit pour le sauvegarder ici.',
+  },
+  'myWishlist': {
+    AppLanguage.en: 'My Wishlist',
+    AppLanguage.fr: 'Ma Liste',
+  },
+  'notifyMe': {AppLanguage.en: 'Notify Me', AppLanguage.fr: 'Me Notifier'},
+  'items': {AppLanguage.en: 'Items', AppLanguage.fr: 'Articles'},
+
+  // ── Orders ────────────────────────────────────────────────────────────────
+  'ordersTitle': {
+    AppLanguage.en: 'Orders & Purchase History',
+    AppLanguage.fr: 'Commandes & Historique',
+  },
+  'ordersPending': {AppLanguage.en: 'Pending', AppLanguage.fr: 'En Cours'},
+  'ordersCompleted': {AppLanguage.en: 'Completed', AppLanguage.fr: 'Terminées'},
+  'ordersEmpty': {
+    AppLanguage.en: 'No orders yet',
+    AppLanguage.fr: 'Aucune commande',
+  },
+  'ordersEmptySub': {
+    AppLanguage.en: 'Your purchase history will appear here.',
+    AppLanguage.fr: 'Votre historique d\'achats apparaîtra ici.',
+  },
+  'viewReceipt': {
+    AppLanguage.en: 'View Receipt',
+    AppLanguage.fr: 'Voir le Reçu'
+  },
+  'buyAgain': {AppLanguage.en: 'Buy Again', AppLanguage.fr: 'Racheter'},
+  'orderStatusCompleted': {
+    AppLanguage.en: 'Completed',
+    AppLanguage.fr: 'Terminée'
+  },
+  'orderStatusPending': {AppLanguage.en: 'Pending', AppLanguage.fr: 'En Cours'},
+  'orderStatusProcessing': {
+    AppLanguage.en: 'Processing',
+    AppLanguage.fr: 'En Traitement'
+  },
+  'orderPurchased': {AppLanguage.en: 'Purchased:', AppLanguage.fr: 'Acheté :'},
+  'orderTotal': {AppLanguage.en: 'Total', AppLanguage.fr: 'Total'},
+
+  // ── Account ───────────────────────────────────────────────────────────────
+  'accountTitle': {AppLanguage.en: 'Account', AppLanguage.fr: 'Compte'},
+  'accountMyOrders': {
+    AppLanguage.en: 'My Orders',
+    AppLanguage.fr: 'Mes Commandes'
+  },
+  'accountInTransit': {
+    AppLanguage.en: 'In Transit',
+    AppLanguage.fr: 'En Transit',
+  },
+  'accountMyWishlist': {
+    AppLanguage.en: 'My Wishlist',
+    AppLanguage.fr: 'Ma Liste de Souhaits',
+  },
+  'accountItemsSaved': {
+    AppLanguage.en: 'Items Saved',
+    AppLanguage.fr: 'Articles Sauvegardés',
+  },
+  'accountShipping': {
+    AppLanguage.en: 'Shipping Addresses',
+    AppLanguage.fr: 'Adresses de Livraison',
+  },
+  'accountShippingSub': {
+    AppLanguage.en: 'Manage locations',
+    AppLanguage.fr: 'Gérer les adresses',
+  },
+  'accountPayment': {
+    AppLanguage.en: 'Payment Methods',
+    AppLanguage.fr: 'Moyens de Paiement',
+  },
+  'accountPaymentSub': {
+    AppLanguage.en: 'Visa ending in 4242',
+    AppLanguage.fr: 'Visa se terminant par 4242',
+  },
+  'accountPreferences': {
+    AppLanguage.en: 'PREFERENCES',
+    AppLanguage.fr: 'PRÉFÉRENCES',
+  },
+  'accountLanguage': {AppLanguage.en: 'Language', AppLanguage.fr: 'Langue'},
+  'accountLanguageVal': {AppLanguage.en: 'English', AppLanguage.fr: 'Français'},
+  'accountDarkMode': {
+    AppLanguage.en: 'Dark Mode',
+    AppLanguage.fr: 'Mode Sombre'
+  },
+  'accountSupport': {AppLanguage.en: 'SUPPORT', AppLanguage.fr: 'SUPPORT'},
+  'accountHelpCenter': {
+    AppLanguage.en: 'Help Center',
+    AppLanguage.fr: 'Centre d\'Aide',
+  },
+  'accountContactAdmin': {
+    AppLanguage.en: 'Contact Admin',
+    AppLanguage.fr: 'Contacter l\'Admin',
+  },
+  'accountClearHistory': {
+    AppLanguage.en: 'Clear My History',
+    AppLanguage.fr: 'Effacer Mon Historique',
+  },
+  'accountClearHistoryConfirmTitle': {
+    AppLanguage.en: 'Clear History?',
+    AppLanguage.fr: 'Effacer l\'Historique ?',
+  },
+  'accountClearHistoryConfirmBody': {
+    AppLanguage.en:
+        'This will permanently remove all your orders, saved items, and cart contents. This cannot be undone.',
+    AppLanguage.fr:
+        'Cela supprimera définitivement toutes vos commandes, articles sauvegardés et le contenu de votre panier. Cette action est irréversible.',
+  },
+  'accountClearHistoryConfirm': {
+    AppLanguage.en: 'Clear',
+    AppLanguage.fr: 'Effacer'
+  },
+  'cancel': {AppLanguage.en: 'Cancel', AppLanguage.fr: 'Annuler'},
+  'comingSoon': {
+    AppLanguage.en: 'Coming soon',
+    AppLanguage.fr: 'Bientôt disponible'
+  },
 };
 
 // ─── Accessor ──────────────────────────────────────────────────────────────────
@@ -199,6 +357,68 @@ class AppLocalizations {
   String get promo3Title => tr('promo3Title');
   String get promo3Sub => tr('promo3Sub');
   String get shopNow => tr('shopNow');
+
+  // Cart
+  String get cartTitle => tr('cartTitle');
+  String get yourCart => tr('yourCart');
+  String get cartEmpty => tr('cartEmpty');
+  String get cartEmptySub => tr('cartEmptySub');
+  String get cartSummary => tr('cartSummary');
+  String get cartItems => tr('cartItems');
+  String get cartTotal => tr('cartTotal');
+  String get cartPaymentNote => tr('cartPaymentNote');
+  String get requestPurchase => tr('requestPurchase');
+  String get removeItem => tr('removeItem');
+  String get cartVariant => tr('cartVariant');
+
+  // Favourites
+  String get favTitle => tr('favTitle');
+  String get savedItems => tr('savedItems');
+  String get favEmpty => tr('favEmpty');
+  String get favEmptySub => tr('favEmptySub');
+  String get myWishlist => tr('myWishlist');
+  String get notifyMe => tr('notifyMe');
+  String get items => tr('items');
+
+  // Orders
+  String get ordersTitle => tr('ordersTitle');
+  String get ordersPending => tr('ordersPending');
+  String get ordersCompleted => tr('ordersCompleted');
+  String get ordersEmpty => tr('ordersEmpty');
+  String get ordersEmptySub => tr('ordersEmptySub');
+  String get viewReceipt => tr('viewReceipt');
+  String get buyAgain => tr('buyAgain');
+  String get orderStatusCompleted => tr('orderStatusCompleted');
+  String get orderStatusPending => tr('orderStatusPending');
+  String get orderStatusProcessing => tr('orderStatusProcessing');
+  String get orderPurchased => tr('orderPurchased');
+  String get orderTotal => tr('orderTotal');
+
+  // Account
+  String get accountTitle => tr('accountTitle');
+  String get accountMyOrders => tr('accountMyOrders');
+  String get accountInTransit => tr('accountInTransit');
+  String get accountMyWishlist => tr('accountMyWishlist');
+  String get accountItemsSaved => tr('accountItemsSaved');
+  String get accountShipping => tr('accountShipping');
+  String get accountShippingSub => tr('accountShippingSub');
+  String get accountPayment => tr('accountPayment');
+  String get accountPaymentSub => tr('accountPaymentSub');
+  String get accountPreferences => tr('accountPreferences');
+  String get accountLanguage => tr('accountLanguage');
+  String get accountLanguageVal => tr('accountLanguageVal');
+  String get accountDarkMode => tr('accountDarkMode');
+  String get accountSupport => tr('accountSupport');
+  String get accountHelpCenter => tr('accountHelpCenter');
+  String get accountContactAdmin => tr('accountContactAdmin');
+  String get accountClearHistory => tr('accountClearHistory');
+  String get accountClearHistoryConfirmTitle =>
+      tr('accountClearHistoryConfirmTitle');
+  String get accountClearHistoryConfirmBody =>
+      tr('accountClearHistoryConfirmBody');
+  String get accountClearHistoryConfirm => tr('accountClearHistoryConfirm');
+  String get cancel => tr('cancel');
+  String get comingSoon => tr('comingSoon');
 }
 
 // ─── InheritedWidget ───────────────────────────────────────────────────────────
