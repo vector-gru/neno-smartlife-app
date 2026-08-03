@@ -20,7 +20,7 @@ class CategoryChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : const Color(0xFFF0F0F0),
           borderRadius: BorderRadius.circular(50),
@@ -30,7 +30,8 @@ class CategoryChip extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? AppColors.textOnPrimary : AppColors.textSecondary,
+            color:
+                isSelected ? AppColors.textOnPrimary : AppColors.textSecondary,
           ),
         ),
       ),
