@@ -823,7 +823,6 @@ class _AdminSettingsScreen extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
-        primary: false,
         title: Text(
           'Settings',
           style: GoogleFonts.poppins(

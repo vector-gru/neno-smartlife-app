@@ -20,8 +20,7 @@ class AdminRequestsScreen extends StatefulWidget {
 }
 
 class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
-  late final List<AdminRequest> _requests =
-      List.from(MockAdminRequests.all);
+  late final List<AdminRequest> _requests = List.from(MockAdminRequests.all);
 
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
@@ -42,10 +41,12 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     }
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
-      list = list.where((r) =>
-          r.customerName.toLowerCase().contains(q) ||
-          r.phone.contains(q) ||
-          r.products.any((p) => p.name.toLowerCase().contains(q))).toList();
+      list = list
+          .where((r) =>
+              r.customerName.toLowerCase().contains(q) ||
+              r.phone.contains(q) ||
+              r.products.any((p) => p.name.toLowerCase().contains(q)))
+          .toList();
     }
     return list;
   }
@@ -83,7 +84,6 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
-        primary: false,
         automaticallyImplyLeading: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,8 +98,8 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
             ),
             Text(
               'Manage and process incoming product orders.',
-              style: GoogleFonts.poppins(
-                  fontSize: 12, color: AppColors.textMuted),
+              style:
+                  GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
         ),
@@ -133,8 +133,8 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
                     : null,
                 filled: true,
                 fillColor: const Color(0xFFF4F4F4),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
@@ -155,8 +155,7 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: GestureDetector(
-                      onTap: () =>
-                          setState(() => _filterStatus = e.value),
+                      onTap: () => setState(() => _filterStatus = e.value),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         padding: const EdgeInsets.symmetric(
@@ -197,14 +196,12 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
                         const SizedBox(height: 12),
                         Text('No requests found',
                             style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                color: AppColors.textMuted)),
+                                fontSize: 15, color: AppColors.textMuted)),
                       ],
                     ),
                   )
                 : ListView.builder(
-                    padding:
-                        const EdgeInsets.fromLTRB(16, 14, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
                     itemCount: requests.length,
                     itemBuilder: (context, i) => Padding(
                       padding: const EdgeInsets.only(bottom: 14),
@@ -212,8 +209,7 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
                         request: requests[i],
                         onConfirm: () => _confirm(requests[i].id),
                         onReject: () => _reject(requests[i].id),
-                        onDiscuss: () =>
-                            _startDiscussion(requests[i].id),
+                        onDiscuss: () => _startDiscussion(requests[i].id),
                       ),
                     ),
                   ),
@@ -249,9 +245,7 @@ class _RequestCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x08000000),
-              blurRadius: 8,
-              offset: Offset(0, 2)),
+              color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Padding(
@@ -279,8 +273,7 @@ class _RequestCard extends StatelessWidget {
                       Row(
                         children: [
                           const Icon(Icons.phone_outlined,
-                              size: 13,
-                              color: AppColors.textSecondary),
+                              size: 13, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
                             request.phone,
@@ -381,9 +374,7 @@ class _ProductRow extends StatelessWidget {
               height: 40,
               fit: BoxFit.cover,
               placeholder: (_, __) => Container(
-                  width: 40,
-                  height: 40,
-                  color: const Color(0xFFEEEEEE)),
+                  width: 40, height: 40, color: const Color(0xFFEEEEEE)),
               errorWidget: (_, __, ___) => Container(
                 width: 40,
                 height: 40,
@@ -452,9 +443,8 @@ class _ActionRow extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: request.isConfirmed
-                      ? AppColors.success
-                      : AppColors.error,
+                  color:
+                      request.isConfirmed ? AppColors.success : AppColors.error,
                 ),
               ),
             ),
@@ -627,8 +617,7 @@ class _StatusBadge extends StatelessWidget {
     };
 
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),
