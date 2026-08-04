@@ -10,8 +10,8 @@ import '../../features/orders/orders_screen.dart';
 import '../../features/profile/account_screen.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
-import '../../shared/widgets/category_chip.dart';
 import '../../shared/widgets/condition_badge.dart';
+import '../../shared/widgets/filter_chip_row.dart';
 import '../../shared/widgets/product_badge.dart';
 import '../../shared/widgets/stock_chip.dart';
 import '../../routes/app_router.dart';
@@ -311,30 +311,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ─── Category chips ───────────────────────────────────────────────────────
   Widget _buildCategoryRow(AppLocalizations l10n) {
+    // Build label→value map preserving MockProducts.categories order.
+    // "All" gets the translated label while the value stays 'All' for filtering.
+    final items = <String, String>{
+      for (final cat in MockProducts.categories)
+        (cat == 'All' ? l10n.allCategories : cat): cat,
+    };
+
     return Container(
       color: Colors.white,
       child: Column(
         children: [
-          SizedBox(
-            height: 30,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: MockProducts.categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final cat = MockProducts.categories[i];
-                // Translate "All" label
-                final label = (cat == 'All') ? l10n.allCategories : cat;
-                return CategoryChip(
-                  label: label,
-                  isSelected: _selectedCategory == cat,
-                  onTap: () => setState(() => _selectedCategory = cat),
-                );
-              },
-            ),
+          FilterChipRow<String>(
+            items: items,
+            selected: _selectedCategory,
+            onSelected: (v) => setState(() => _selectedCategory = v),
+            paddingTop: 8,
+            paddingBottom: 8,
           ),
-          const SizedBox(height: 8),
           const Divider(height: 1, color: Color(0xFFEEEEEE)),
         ],
       ),

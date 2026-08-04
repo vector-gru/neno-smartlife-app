@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/data/mock_admin_requests.dart';
 import '../../shared/models/admin_request.dart';
+import '../../shared/widgets/filter_chip_row.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin – Customer Requests Screen
@@ -144,44 +145,10 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
           ),
 
           // ── Filter chips ────────────────────────────────────────────────
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _filterLabels.entries.map((e) {
-                  final selected = _filterStatus == e.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _filterStatus = e.value),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? AppColors.primary
-                              : const Color(0xFFF0F0F0),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          e.key,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: selected
-                                ? AppColors.textOnPrimary
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+          FilterChipRow<CustomerRequestStatus?>(
+            items: _filterLabels,
+            selected: _filterStatus,
+            onSelected: (v) => setState(() => _filterStatus = v),
           ),
 
           // ── List ────────────────────────────────────────────────────────
