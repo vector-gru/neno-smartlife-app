@@ -10,10 +10,12 @@ import '../../features/orders/orders_screen.dart';
 import '../../features/profile/account_screen.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
+import '../../shared/widgets/app_search_bar.dart';
 import '../../shared/widgets/condition_badge.dart';
 import '../../shared/widgets/filter_chip_row.dart';
 import '../../shared/widgets/product_badge.dart';
 import '../../shared/widgets/stock_chip.dart';
+import '../../features/categories/categories_screen.dart';
 import '../../routes/app_router.dart';
 
 // ─── Promo banner data model ───────────────────────────────────────────────────
@@ -137,8 +139,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          // ── Tab 1: Categories (placeholder) ───────────────────────────────
-          const _CategoriesPlaceholder(),
+          // ── Tab 1: Categories ─────────────────────────────────────────────
+          const CategoriesScreen(),
           // ── Tab 2: Orders ──────────────────────────────────────────────────
           const OrdersScreen(),
           // ── Tab 3: Account ─────────────────────────────────────────────────
@@ -265,46 +267,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ─── Search bar ───────────────────────────────────────────────────────────
   Widget _buildSearchBar(AppLocalizations l10n) {
-    return Container(
+    return ColoredBox(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: TextField(
+      child: AppSearchBar(
         controller: _searchController,
+        hintText: l10n.searchHint,
         onChanged: (v) => setState(() => _searchQuery = v),
-        style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textPrimary),
-        decoration: InputDecoration(
-          hintText: l10n.searchHint,
-          hintStyle:
-              GoogleFonts.poppins(fontSize: 14, color: AppColors.textMuted),
-          prefixIcon:
-              const Icon(Icons.search, color: AppColors.textMuted, size: 20),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? GestureDetector(
-                  onTap: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = '');
-                  },
-                  child: const Icon(Icons.close,
-                      color: AppColors.textMuted, size: 18),
-                )
-              : null,
-          filled: true,
-          fillColor: const Color(0xFFF2F2F2),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(50),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(50),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(50),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-          ),
-        ),
       ),
     );
   }
@@ -944,46 +912,6 @@ class _TimeTag extends StatelessWidget {
           fontWeight: FontWeight.w400,
           color: AppColors.textMuted,
         ),
-      ),
-    );
-  }
-}
-
-// ─── Categories placeholder ────────────────────────────────────────────────────
-// Temporary — replace with a real CategoriesScreen when built.
-class _CategoriesPlaceholder extends StatelessWidget {
-  const _CategoriesPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.grid_view_rounded,
-            size: 64,
-            color: AppColors.textMuted.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.navCategories,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Coming soon',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
+import '../../shared/widgets/app_search_bar.dart';
 import 'admin_edit_product_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -151,38 +152,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       body: Column(
         children: [
           // ── Search ───────────────────────────────────────────────────────
-          Container(
+          ColoredBox(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: TextField(
+            child: AppSearchBar(
               controller: _searchController,
+              hintText: 'Search products, SKUs, or categories...',
               onChanged: (v) => setState(() => _searchQuery = v),
-              style: GoogleFonts.poppins(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Search products, SKUs, or categories...',
-                hintStyle: GoogleFonts.poppins(
-                    fontSize: 13, color: AppColors.textMuted),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: AppColors.textMuted, size: 20),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                        child: const Icon(Icons.close_rounded,
-                            color: AppColors.textMuted, size: 18),
-                      )
-                    : null,
-                filled: true,
-                fillColor: const Color(0xFFF4F4F4),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
             ),
           ),
 

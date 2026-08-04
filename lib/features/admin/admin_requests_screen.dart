@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/data/mock_admin_requests.dart';
 import '../../shared/models/admin_request.dart';
+import '../../shared/widgets/app_search_bar.dart';
 import '../../shared/widgets/filter_chip_row.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -109,38 +110,12 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
       body: Column(
         children: [
           // ── Search ─────────────────────────────────────────────────────
-          Container(
+          ColoredBox(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: TextField(
+            child: AppSearchBar(
               controller: _searchCtrl,
+              hintText: 'Search requests...',
               onChanged: (v) => setState(() => _searchQuery = v),
-              style: GoogleFonts.poppins(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Search requests...',
-                hintStyle: GoogleFonts.poppins(
-                    fontSize: 13, color: AppColors.textMuted),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: AppColors.textMuted, size: 20),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () {
-                          _searchCtrl.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                        child: const Icon(Icons.close_rounded,
-                            color: AppColors.textMuted, size: 18),
-                      )
-                    : null,
-                filled: true,
-                fillColor: const Color(0xFFF4F4F4),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-              ),
             ),
           ),
 
