@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../shared/models/product.dart';
@@ -48,6 +51,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   late bool _featured;
   late List<String> _imageUrls;
   late List<MapEntry<String, String>> _specs;
+  late String _stockStatus;
 
   @override
   void initState() {
@@ -61,11 +65,15 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
             ? p.originalPrice!.toStringAsFixed(0)
             : '');
     _descCtrl = TextEditingController(text: p.description);
-    _qtyCtrl = TextEditingController(text: '15');
+    _qtyCtrl = TextEditingController(
+        text: p.quantity > 0 ? p.quantity.toString() : '');
     _category = p.category.isEmpty ? _categories.first : p.category;
     _featured = p.badge == 'HOT' || p.badge == 'NEW';
     _imageUrls = List.from(p.imageUrls);
-    _specs = p.specifications.entries.toList();
+    // Exclude 'Quantity' in case it was previously stored in specs (migration safety)
+    _specs =
+        p.specifications.entries.where((e) => e.key != 'Quantity').toList();
+    _stockStatus = p.stockStatus.isEmpty ? 'in_stock' : p.stockStatus;
   }
 
   @override
@@ -78,6 +86,130 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     super.dispose();
   }
 
+  static const _maxImages = 8;
+  final _picker = ImagePicker();
+
+  Future<void> _showImageSourceSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Add Product Image',
+                style: GoogleFonts.poppins(
+                    fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_camera_outlined,
+                      color: AppColors.primary),
+                ),
+                title: Text('Take a Photo',
+                    style: GoogleFonts.poppins(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text('Use the camera',
+                    style: GoogleFonts.poppins(
+                        fontSize: 12, color: AppColors.textMuted)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _pickImages(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_outlined,
+                      color: AppColors.primary),
+                ),
+                title: Text('Choose from Gallery',
+                    style: GoogleFonts.poppins(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text('Pick one or multiple images',
+                    style: GoogleFonts.poppins(
+                        fontSize: 12, color: AppColors.textMuted)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _pickImages(ImageSource.gallery);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImages(ImageSource source) async {
+    try {
+      final remaining = _maxImages - _imageUrls.length;
+      if (remaining <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Maximum $_maxImages images reached.',
+                style: GoogleFonts.poppins(fontSize: 13)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      if (source == ImageSource.camera) {
+        final photo = await _picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+        );
+        if (photo != null) {
+          setState(() => _imageUrls.add(photo.path));
+        }
+      } else {
+        final photos = await _picker.pickMultiImage(imageQuality: 85);
+        if (photos.isNotEmpty) {
+          final toAdd = photos.take(remaining).map((x) => x.path).toList();
+          setState(() => _imageUrls.addAll(toAdd));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not pick image: $e',
+                style: GoogleFonts.poppins(fontSize: 13)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   void _save() {
     final updated = Product(
       id: widget.product.id,
@@ -88,7 +220,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       category: _category,
       imageUrls: _imageUrls,
       badge: _featured ? 'HOT' : '',
-      stockStatus: widget.product.stockStatus,
+      stockStatus: _stockStatus,
+      quantity: int.tryParse(_qtyCtrl.text.trim()) ?? 0,
       specifications: Map.fromEntries(_specs),
       condition: widget.product.condition,
     );
@@ -226,10 +359,8 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     );
   }
 
-  // ── Product Images section ─────────────────────────────────────────────────
   Widget _buildImagesSection() {
     final uploadedCount = _imageUrls.length;
-    const maxImages = 8;
 
     return _SectionCard(children: [
       Row(
@@ -237,7 +368,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
           _sectionTitle('Product Images'),
           const Spacer(),
           Text(
-            '$uploadedCount / $maxImages Uploaded',
+            '$uploadedCount / $_maxImages Uploaded',
             style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -246,9 +377,9 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         ],
       ),
       const SizedBox(height: 14),
-      // Upload drop zone
+      // Upload tap zone
       GestureDetector(
-        onTap: () {}, // would open image picker
+        onTap: _imageUrls.length < _maxImages ? _showImageSourceSheet : null,
         child: Container(
           height: 110,
           width: double.infinity,
@@ -256,7 +387,9 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
             color: const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.border,
+              color: _imageUrls.length < _maxImages
+                  ? AppColors.border
+                  : AppColors.border.withValues(alpha: 0.4),
               width: 1.5,
               style: BorderStyle.solid,
             ),
@@ -264,21 +397,31 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.add_photo_alternate_outlined,
-                  color: AppColors.textMuted, size: 30),
+              Icon(
+                Icons.add_photo_alternate_outlined,
+                color: _imageUrls.length < _maxImages
+                    ? AppColors.textMuted
+                    : AppColors.border,
+                size: 30,
+              ),
               const SizedBox(height: 8),
               Text(
-                'Drag & drop or click to upload',
+                _imageUrls.length < _maxImages
+                    ? 'Tap to add from camera or gallery'
+                    : 'Maximum images reached',
                 style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary),
+                    color: _imageUrls.length < _maxImages
+                        ? AppColors.textSecondary
+                        : AppColors.textMuted),
               ),
-              Text(
-                'Primary Image',
-                style: GoogleFonts.poppins(
-                    fontSize: 11, color: AppColors.textMuted),
-              ),
+              if (_imageUrls.isEmpty)
+                Text(
+                  'First image becomes the primary',
+                  style: GoogleFonts.poppins(
+                      fontSize: 11, color: AppColors.textMuted),
+                ),
             ],
           ),
         ),
@@ -302,13 +445,24 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       ),
       itemCount: _imageUrls.length,
       itemBuilder: (context, index) {
+        final url = _imageUrls[index];
+        final isLocal = !url.startsWith('http');
         final isMain = index == 0;
-        return Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: CachedNetworkImage(
-                imageUrl: _imageUrls[index],
+
+        Widget imageWidget = isLocal
+            ? Image.file(
+                File(url),
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: const Color(0xFFF2F2F2),
+                  child: const Icon(Icons.broken_image_outlined,
+                      color: AppColors.border),
+                ),
+              )
+            : CachedNetworkImage(
+                imageUrl: url,
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
@@ -318,46 +472,194 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                     color: const Color(0xFFF2F2F2),
                     child: const Icon(Icons.image_outlined,
                         color: AppColors.border)),
+              );
+
+        return GestureDetector(
+          onTap: () => _showImageOptionsSheet(index),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: imageWidget,
               ),
-            ),
-            if (isMain)
+              // "NEW" badge for locally picked images not yet uploaded
+              if (isLocal)
+                Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text('NEW',
+                        style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white)),
+                  ),
+                ),
+              if (isMain && !isLocal)
+                Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text('MAIN',
+                        style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textOnPrimary)),
+                  ),
+                ),
+              if (isMain && isLocal)
+                Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text('MAIN',
+                            style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textOnPrimary)),
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.success,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text('NEW',
+                            style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ),
               Positioned(
-                left: 6,
-                bottom: 6,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(5),
+                right: 4,
+                top: 4,
+                child: GestureDetector(
+                  onTap: () => setState(() => _imageUrls.removeAt(index)),
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: const BoxDecoration(
+                      color: Color(0xCC000000),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        size: 13, color: Colors.white),
                   ),
-                  child: Text('MAIN',
-                      style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textOnPrimary)),
                 ),
               ),
-            Positioned(
-              right: 4,
-              top: 4,
-              child: GestureDetector(
-                onTap: () => setState(() => _imageUrls.removeAt(index)),
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: const BoxDecoration(
-                    color: Color(0xCC000000),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.close_rounded,
-                      size: 13, color: Colors.white),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         );
       },
+    );
+  }
+
+  void _showImageOptionsSheet(int index) {
+    final isMain = index == 0;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                isMain ? 'Main Image' : 'Image Options',
+                style: GoogleFonts.poppins(
+                    fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              if (!isMain)
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.star_rounded,
+                        color: AppColors.primary),
+                  ),
+                  title: Text('Set as Main Image',
+                      style: GoogleFonts.poppins(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: Text('Move to first position',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12, color: AppColors.textMuted)),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    setState(() {
+                      final img = _imageUrls.removeAt(index);
+                      _imageUrls.insert(0, img);
+                    });
+                  },
+                ),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: AppColors.error),
+                ),
+                title: Text('Remove Image',
+                    style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.error)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  setState(() => _imageUrls.removeAt(index));
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -368,11 +670,17 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       const SizedBox(height: 16),
       _fieldLabel('Quantity Available'),
       SizedBox(
-        width: 100,
+        width: 120,
         child:
             _textField(_qtyCtrl, hint: '0', keyboardType: TextInputType.number),
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 20),
+      _fieldLabel('Stock Status'),
+      _StockStatusSelector(
+        value: _stockStatus,
+        onChanged: (v) => setState(() => _stockStatus = v),
+      ),
+      const SizedBox(height: 20),
       Row(
         children: [
           Expanded(
@@ -794,6 +1102,82 @@ class _SectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stock Status Selector
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StockStatusSelector extends StatelessWidget {
+  final String value;
+  final void Function(String) onChanged;
+
+  const _StockStatusSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  static const _options = [
+    (
+      value: 'in_stock',
+      label: 'In Stock',
+      color: AppColors.success,
+      bg: Color(0xFFECFDF5)
+    ),
+    (
+      value: 'limited',
+      label: 'Low Stock',
+      color: AppColors.warning,
+      bg: Color(0xFFFEF9EC)
+    ),
+    (
+      value: 'out_of_stock',
+      label: 'Out of Stock',
+      color: AppColors.error,
+      bg: Color(0xFFFEF2F2)
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: _options.map((opt) {
+        final selected = value == opt.value;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => onChanged(opt.value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: selected ? opt.bg : const Color(0xFFF4F4F4),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: selected
+                        ? opt.color.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  opt.label,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? opt.color : AppColors.textMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

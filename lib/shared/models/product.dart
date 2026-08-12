@@ -24,6 +24,7 @@ class Product {
   final Map<String, String> specifications;
   final List<Product> frequentlyBoughtWith;
   final ProductCondition condition;
+  final int quantity;
 
   const Product({
     required this.id,
@@ -44,6 +45,7 @@ class Product {
     this.specifications = const {},
     this.frequentlyBoughtWith = const [],
     this.condition = ProductCondition.newProduct,
+    this.quantity = 0,
   });
 
   bool get isNew => condition == ProductCondition.newProduct;

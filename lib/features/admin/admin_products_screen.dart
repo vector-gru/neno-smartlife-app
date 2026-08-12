@@ -1,10 +1,12 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../shared/data/mock_products.dart';
+import '../../core/state/app_state.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/app_search_bar.dart';
 import 'admin_edit_product_screen.dart';
@@ -32,7 +34,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   ];
 
   // Mutable local product list so edits are reflected immediately
-  late final List<Product> _products = List.from(MockProducts.all);
+  List<Product> get _products => context.appState.products;
 
   List<Product> get _filtered {
     var list = _products;
@@ -65,15 +67,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       MaterialPageRoute(
         builder: (_) => AdminEditProductScreen(
           product: product,
-          onSave: (updated) {
-            setState(() {
-              final i = _products.indexWhere((p) => p.id == updated.id);
-              if (i >= 0) _products[i] = updated;
-            });
-          },
-          onDelete: (id) {
-            setState(() => _products.removeWhere((p) => p.id == id));
-          },
+          onSave: (updated) => context.appState.updateProduct(updated),
+          onDelete: (id) => context.appState.deleteProduct(id),
         ),
       ),
     );
@@ -94,9 +89,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         builder: (_) => AdminEditProductScreen(
           product: newProduct,
           isNew: true,
-          onSave: (created) {
-            setState(() => _products.insert(0, created));
-          },
+          onSave: (created) => context.appState.addProduct(created),
           onDelete: (_) {},
         ),
       ),
@@ -278,7 +271,7 @@ class _ProductAdminCard extends StatelessWidget {
             ? const Color(0xFFFEF9EC)
             : const Color(0xFFFEF2F2);
 
-    final qty = product.specifications['Storage'] != null ? 142 : 56;
+    final qty = product.quantity;
 
     return Container(
       decoration: BoxDecoration(
@@ -299,14 +292,7 @@ class _ProductAdminCard extends StatelessWidget {
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(16)),
                 child: product.imageUrls.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: product.imageUrls.first,
-                        height: 180,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => _imagePlaceholder(),
-                        errorWidget: (_, __, ___) => _imagePlaceholder(),
-                      )
+                    ? _buildMainImage(product.imageUrls.first)
                     : _imagePlaceholder(),
               ),
               // Stock badge
@@ -463,6 +449,27 @@ class _ProductAdminCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMainImage(String url) {
+    final isLocal = !url.startsWith('http');
+    if (isLocal) {
+      return Image.file(
+        File(url),
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imagePlaceholder(),
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      height: 180,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => _imagePlaceholder(),
+      errorWidget: (_, __, ___) => _imagePlaceholder(),
     );
   }
 

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/condition_badge.dart';
 import '../../shared/widgets/product_badge.dart';
+import '../../shared/widgets/product_image.dart';
 import '../../shared/widgets/stock_chip.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -138,15 +137,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           height: 260,
           width: double.infinity,
           child: p.imageUrls.isNotEmpty
-              ? CachedNetworkImage(
-                  imageUrl: p.imageUrls[_selectedImageIndex],
+              ? ProductImage(
+                  url: p.imageUrls[_selectedImageIndex],
                   fit: BoxFit.contain,
-                  placeholder: (_, __) => Shimmer.fromColors(
-                    baseColor: AppColors.shimmerBase,
-                    highlightColor: AppColors.shimmerHighlight,
-                    child: Container(color: const Color(0xFFF8F8F8)),
-                  ),
-                  errorWidget: (_, __, ___) => const Center(
+                  errorWidget: const Center(
                     child: Icon(Icons.image_not_supported_outlined,
                         size: 60, color: AppColors.textMuted),
                   ),
@@ -197,14 +191,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: CachedNetworkImage(
-                  imageUrl: p.imageUrls[i],
+                child: ProductImage(
+                  url: p.imageUrls[i],
                   fit: BoxFit.cover,
-                  placeholder: (_, __) => Shimmer.fromColors(
-                    baseColor: AppColors.shimmerBase,
-                    highlightColor: AppColors.shimmerHighlight,
-                    child: Container(color: Colors.white),
-                  ),
                 ),
               ),
             ),
@@ -606,14 +595,9 @@ class _FrequentlyBoughtCard extends StatelessWidget {
                 height: 88,
                 width: double.infinity,
                 child: product.imageUrls.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: product.imageUrls.first,
+                    ? ProductImage(
+                        url: product.imageUrls.first,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Shimmer.fromColors(
-                          baseColor: AppColors.shimmerBase,
-                          highlightColor: AppColors.shimmerHighlight,
-                          child: Container(color: Colors.white),
-                        ),
                       )
                     : Container(color: const Color(0xFFEEEEEE)),
               ),

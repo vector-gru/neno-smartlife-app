@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/state/app_state.dart';
+import '../../routes/app_router.dart';
 import '../../shared/models/cart_item.dart';
+import '../../shared/widgets/product_image.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -150,8 +150,7 @@ class CartScreen extends StatelessWidget {
                   item.product.id,
                   item.quantity + 1,
                 ),
-                onRemove: () =>
-                    state.removeFromCart(item.product.id),
+                onRemove: () => state.removeFromCart(item.product.id),
               ),
             )),
 
@@ -338,7 +337,6 @@ class _CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = item.product;
-    final hasImage = p.imageUrls.isNotEmpty;
 
     return Dismissible(
       key: ValueKey(p.id),
@@ -354,39 +352,37 @@ class _CartItemCard extends StatelessWidget {
             color: AppColors.error, size: 26),
       ),
       onDismissed: (_) => onRemove(),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x08000000),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Product thumbnail
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 76,
-                  height: 76,
-                  child: hasImage
-                      ? CachedNetworkImage(
-                          imageUrl: p.imageUrls.first,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Shimmer.fromColors(
-                            baseColor: AppColors.shimmerBase,
-                            highlightColor: AppColors.shimmerHighlight,
-                            child: Container(color: Colors.white),
-                          ),
-                          errorWidget: (_, __, ___) => Container(
+      child: GestureDetector(
+        onTap: () => AppRouter.goToProduct(context, p),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 76,
+                    height: 76,
+                    child: p.imageUrls.isNotEmpty
+                        ? ProductImage(
+                            url: p.imageUrls.first,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
                             color: const Color(0xFFF5F5F5),
                             child: const Icon(
                               Icons.image_not_supported_outlined,
@@ -394,91 +390,99 @@ class _CartItemCard extends StatelessWidget {
                               color: AppColors.textMuted,
                             ),
                           ),
-                        )
-                      : Container(
-                          color: const Color(0xFFF5F5F5),
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Details + stepper
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name row + remove button
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              p.name,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: onRemove,
+                            child: const Padding(
+                              padding: EdgeInsets.only(left: 8),
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Variant (color / storage) — shown only if set
+                      if (item.variant.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          item.variant,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
                             color: AppColors.textMuted,
                           ),
                         ),
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Details + stepper
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Product name
-                    Text(
-                      p.name,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        height: 1.3,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    // Variant (color / storage) — shown only if set
-                    if (item.variant.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        item.variant,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ] else if (p.selectedColor.isNotEmpty ||
-                        p.colorOptions.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        _variantLabel(p.selectedColor),
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 10),
-
-                    // Quantity stepper + line total
-                    Row(
-                      children: [
-                        // Stepper
-                        _QuantityStepper(
-                          quantity: item.quantity,
-                          onDecrement: onDecrement,
-                          onIncrement: onIncrement,
-                        ),
-                        const SizedBox(width: 14),
-                        // Line total
-                        Expanded(
-                          child: Text(
-                            item.formattedLineTotal,
-                            textAlign: TextAlign.right,
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
+                      ] else if (p.selectedColor.isNotEmpty ||
+                          p.colorOptions.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          _variantLabel(p.selectedColor),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ],
-                    ),
-                  ],
+
+                      const SizedBox(height: 10),
+
+                      // Quantity stepper + line total
+                      Row(
+                        children: [
+                          _QuantityStepper(
+                            quantity: item.quantity,
+                            onDecrement: onDecrement,
+                            onIncrement: onIncrement,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              item.formattedLineTotal,
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -2,17 +2,17 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/state/app_state.dart';
 import '../../routes/app_router.dart';
 import '../../shared/data/mock_categories.dart';
-import '../../shared/data/mock_products.dart';
 import '../../shared/models/admin_category.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/app_search_bar.dart';
 import '../../shared/widgets/condition_badge.dart';
 import '../../shared/widgets/filter_chip_row.dart';
+import '../../shared/widgets/product_image.dart';
 import '../../shared/widgets/product_badge.dart';
 import '../../shared/widgets/stock_chip.dart';
 
@@ -304,7 +304,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   };
 
   List<Product> get _products {
-    var list = MockProducts.byCategory(widget.category.name);
+    var list = context.appState.productsByCategory(widget.category.name);
     switch (_sortBy) {
       case 'Price ↑':
         list = [...list]..sort((a, b) => a.price.compareTo(b.price));
@@ -531,22 +531,9 @@ class _ProductCard extends StatelessWidget {
                 width: 110,
                 height: 110,
                 child: p.imageUrls.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: p.imageUrls.first,
+                    ? ProductImage(
+                        url: p.imageUrls.first,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Shimmer.fromColors(
-                          baseColor: AppColors.shimmerBase,
-                          highlightColor: AppColors.shimmerHighlight,
-                          child: Container(color: Colors.white),
-                        ),
-                        errorWidget: (_, __, ___) => Container(
-                          color: const Color(0xFFF5F5F5),
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 32,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
                       )
                     : Container(
                         color: const Color(0xFFF5F5F5),

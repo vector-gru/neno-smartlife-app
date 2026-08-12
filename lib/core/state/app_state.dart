@@ -3,6 +3,7 @@
 // Mirrors the same pattern already used by LocaleProvider in app_localizations.dart.
 
 import 'package:flutter/material.dart';
+import '../../shared/data/mock_products.dart';
 import '../../shared/models/cart_item.dart';
 import '../../shared/models/order.dart';
 import '../../shared/models/product.dart';
@@ -16,13 +17,39 @@ class AppStateProvider extends StatefulWidget {
   State<AppStateProvider> createState() => AppStateProviderState();
 
   static AppStateProviderState of(BuildContext context) {
-    final state = context.findAncestorStateOfType<AppStateProviderState>();
-    assert(state != null, 'No AppStateProvider found in widget tree');
-    return state!;
+    final inherited =
+        context.dependOnInheritedWidgetOfExactType<_InheritedAppState>();
+    assert(inherited != null, 'No AppStateProvider found in widget tree');
+    return inherited!.state;
   }
 }
 
 class AppStateProviderState extends State<AppStateProvider> {
+  // ── Product Catalogue ──────────────────────────────────────────────────────
+  // Mutable in-memory copy of the catalogue. Seeded from MockProducts at
+  // startup and kept in sync across admin and customer views for the session.
+  List<Product> _products = List.from(MockProducts.all);
+
+  List<Product> get products => List.unmodifiable(_products);
+
+  List<Product> productsByCategory(String category) {
+    if (category == 'All') return List.unmodifiable(_products);
+    return _products.where((p) => p.category == category).toList();
+  }
+
+  void addProduct(Product product) =>
+      setState(() => _products.insert(0, product));
+
+  void updateProduct(Product updated) {
+    setState(() {
+      final i = _products.indexWhere((p) => p.id == updated.id);
+      if (i >= 0) _products[i] = updated;
+    });
+  }
+
+  void deleteProduct(String id) =>
+      setState(() => _products.removeWhere((p) => p.id == id));
+
   // ── Cart ───────────────────────────────────────────────────────────────────
   final List<CartItem> _cartItems = [];
 
