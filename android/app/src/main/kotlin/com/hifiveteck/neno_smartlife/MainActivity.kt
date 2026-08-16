@@ -1,4 +1,4 @@
-package com.hifiveteck.neno_smartlife
+package com.hifivetech.neno_smartlife
 
 import io.flutter.embedding.android.FlutterActivity
 
