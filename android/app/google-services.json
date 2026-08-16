@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "65925137623",
+    "project_id": "neno-smartlife",
+    "storage_bucket": "neno-smartlife.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65925137623:android:aaf9a63b1e6b03494f5c92",
+        "android_client_info": {
+          "package_name": "com.hifivetech.neno_smartlife"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAX2fgHiy8DRpN9AJ-aZmD91X8-_eTbqUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
