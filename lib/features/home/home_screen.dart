@@ -142,8 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     }
     // Pin featured products to the top (preserve relative order within each group)
-    final featured = products.where((p) => p.featured).toList();
-    final rest = products.where((p) => !p.featured).toList();
+    final featured =
+        products.where((p) => p.featured || p.badge == 'HOT').toList();
+    final rest =
+        products.where((p) => !p.featured && p.badge != 'HOT').toList();
     return [...featured, ...rest];
   }
 
@@ -189,21 +191,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? _buildEmpty(l10n)
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
-                        itemCount: _filteredProducts.length + 1,
-                        separatorBuilder: (_, i) => i == 0
+                        itemCount: _filteredProducts.length + 2,
+                        separatorBuilder: (_, i) => i <= 1
                             ? const SizedBox.shrink()
                             : const SizedBox(height: 16),
                         itemBuilder: (context, i) {
                           if (i == 0) {
-                            // Banner only shown when not actively searching
                             return _isSearching
                                 ? const SizedBox.shrink()
                                 : _buildPromoBannerSection(l10n);
                           }
+                          if (i == 1) {
+                            return _isSearching
+                                ? const SizedBox.shrink()
+                                : _buildRecentlyAddedSection(l10n);
+                          }
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child:
-                                _ProductCard(product: _filteredProducts[i - 1]),
+                                _ProductCard(product: _filteredProducts[i - 2]),
                           );
                         },
                       ),
@@ -280,8 +286,9 @@ class _HomeScreenState extends State<HomeScreen> {
               if (!_isSearching) {
                 _searchQuery = '';
                 _searchController.clear();
+                // Restart timer so banner resumes cleanly
+                _startBannerTimer();
               } else {
-                // Focus the search field after the frame renders
                 WidgetsBinding.instance.addPostFrameCallback(
                   (_) => _searchFocus.requestFocus(),
                 );
@@ -353,9 +360,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPromoBannerSection(AppLocalizations l10n) {
     return Column(
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 148,
+          height: 138,
           child: PageView.builder(
             controller: _bannerController,
             itemCount: _promoBanners.length,
@@ -364,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _BannerSlide(banner: _promoBanners[i], l10n: l10n),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         // Dot indicators
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -384,7 +391,53 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // ─── Recently added horizontal row ───────────────────────────────────────
+  Widget _buildRecentlyAddedSection(AppLocalizations l10n) {
+    final recent = context.appState.products.take(10).toList();
+    if (recent.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          child: Row(
+            children: [
+              Text(
+                'Recently Added',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${recent.length} items',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 185,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: recent.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, i) => _RecentProductCard(product: recent[i]),
+          ),
+        ),
+        const SizedBox(height: 8),
       ],
     );
   }
@@ -605,6 +658,104 @@ class _NavItem extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? AppColors.primary : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Recent product card (compact horizontal tile) ────────────────────────────
+class _RecentProductCard extends StatelessWidget {
+  final Product product;
+  const _RecentProductCard({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = product;
+    return GestureDetector(
+      onTap: () => AppRouter.goToProduct(context, p),
+      child: Container(
+        width: 120,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(12)),
+                  child: SizedBox(
+                    height: 96,
+                    width: double.infinity,
+                    child: p.imageUrls.isNotEmpty
+                        ? ProductImage(
+                            url: p.imageUrls.first,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(color: const Color(0xFFF5F5F5)),
+                  ),
+                ),
+                if (p.featured || p.badge == 'HOT')
+                  const Positioned(
+                    top: 6,
+                    left: 6,
+                    child: ProductBadge(label: 'HOT'),
+                  ),
+              ],
+            ),
+            // Info
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    p.formattedPrice,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  if (p.hasDiscount) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      p.formattedOriginalPrice!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
