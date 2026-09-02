@@ -43,10 +43,22 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  bool _prefilled = false;
+
   @override
   void initState() {
     super.initState();
-    // Pre-fill if there's already a saved identity (e.g. user editing it).
+    // Pre-fill happens in didChangeDependencies — not here — because
+    // accessing context.appState (an InheritedWidget lookup) is forbidden
+    // inside initState().
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only pre-fill once; didChangeDependencies can fire more than once.
+    if (_prefilled) return;
+    _prefilled = true;
     final identity = context.appState.customerIdentity;
     if (identity != null) {
       _nameController.text = identity.fullName;
@@ -75,10 +87,10 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
         phone: _phoneController.text.trim(),
       );
       if (mounted) Navigator.of(context).pop(true);
-    } catch (_) {
+    } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Could not save your info. Please try again.';
+        _errorMessage = e.toString();
       });
     }
   }

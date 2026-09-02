@@ -224,11 +224,11 @@ class FavouritesScreen extends StatelessWidget {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 220,
+              mainAxisExtent: 310,
               mainAxisSpacing: 14,
               crossAxisSpacing: 14,
-              childAspectRatio: 0.62,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _FavouriteCard(
@@ -280,14 +280,15 @@ class _FavouriteCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Image section ────────────────────────────────────────────────
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(14)),
-                  child: AspectRatio(
-                    aspectRatio: 1.0,
+            // ── Image section — fixed height leaves room for text ────────────
+            SizedBox(
+              height: 150,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(14)),
                     child: ColorFiltered(
                       colorFilter: isOutOfStock
                           ? const ColorFilter.matrix([
@@ -335,137 +336,140 @@ class _FavouriteCard extends StatelessWidget {
                           : Container(color: const Color(0xFFF5F5F5)),
                     ),
                   ),
-                ),
-
-                // Stock badge — top left
-                if (p.isInStock || p.isLimitedStock)
+                  // Stock badge — top left
+                  if (p.isInStock || p.isLimitedStock)
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: _StockPill(
+                        label: p.isInStock ? l10n.inStock : l10n.limitedStock,
+                        color: p.isInStock
+                            ? AppColors.primary
+                            : AppColors.stockLimited,
+                        textColor: p.isInStock
+                            ? AppColors.textOnPrimary
+                            : Colors.white,
+                      ),
+                    ),
+                  if (isOutOfStock)
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: _StockPill(
+                        label: l10n.outOfStock,
+                        color: const Color(0xFFE8E8E8),
+                        textColor: AppColors.textMuted,
+                      ),
+                    ),
+                  // Favourite heart — top right
                   Positioned(
-                    top: 10,
-                    left: 10,
-                    child: _StockPill(
-                      label: p.isInStock ? l10n.inStock : l10n.limitedStock,
-                      color: p.isInStock
-                          ? AppColors.primary
-                          : AppColors.stockLimited,
-                      textColor:
-                          p.isInStock ? AppColors.textOnPrimary : Colors.white,
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => state.toggleFavourite(p),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          size: 17,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
                     ),
                   ),
-                if (isOutOfStock)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: _StockPill(
-                      label: l10n.outOfStock,
-                      color: const Color(0xFFE8E8E8),
-                      textColor: AppColors.textMuted,
-                    ),
-                  ),
+                ],
+              ),
+            ),
 
-                // Favourite heart — top right
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () => state.toggleFavourite(p),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 6,
+            // ── Text section — Expanded fills remaining cell height ───────────
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Product name
+                    Text(
+                      p.name,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    // Brand / category
+                    Text(
+                      p.category,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Price
+                    Text(
+                      p.formattedPrice,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (p.hasDiscount) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Text(
+                            p.formattedOriginalPrice!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textMuted,
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: AppColors.textMuted,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '-${p.discountPercent}%',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.favorite_rounded,
-                        size: 17,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ),
+                    ],
+                    const SizedBox(height: 8),
+                    // CTA button
+                    _FavCTA(product: p, l10n: l10n, isOutOfStock: isOutOfStock),
+                  ],
                 ),
-              ],
-            ),
-
-            // ── Text section ─────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Product name
-                  Text(
-                    p.name,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  // Brand / category
-                  Text(
-                    p.category,
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  // Price
-                  Text(
-                    p.formattedPrice,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  if (p.hasDiscount)
-                    Row(
-                      children: [
-                        Text(
-                          p.formattedOriginalPrice!,
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textMuted,
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: AppColors.textMuted,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            '-${p.discountPercent}%',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 10),
-                  // CTA button
-                  _FavCTA(product: p, l10n: l10n, isOutOfStock: isOutOfStock),
-                ],
               ),
             ),
           ],
