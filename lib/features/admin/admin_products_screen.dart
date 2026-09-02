@@ -9,6 +9,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/state/app_state.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/app_search_bar.dart';
+import '../../shared/widgets/filter_chip_row.dart';
 import 'admin_edit_product_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,31 +26,15 @@ class AdminProductsScreen extends StatefulWidget {
 class _AdminProductsScreenState extends State<AdminProductsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedFilter = 'All Products';
-
-  static const _filters = [
-    'All Products',
-    'Electronics',
-    'Accessories',
-  ];
+  String _selectedFilter = 'All';
 
   // Mutable local product list so edits are reflected immediately
   List<Product> get _products => context.appState.products;
 
   List<Product> get _filtered {
     var list = _products;
-    if (_selectedFilter != 'All Products') {
-      list = list.where((p) {
-        switch (_selectedFilter) {
-          case 'Electronics':
-            return ['Phones', 'Tablets', 'Televisions', 'Smart Watches']
-                .contains(p.category);
-          case 'Accessories':
-            return ['Headphones', 'Bluetooth Speakers'].contains(p.category);
-          default:
-            return true;
-        }
-      }).toList();
+    if (_selectedFilter != 'All') {
+      list = list.where((p) => p.category == _selectedFilter).toList();
     }
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
@@ -162,44 +147,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           ),
 
           // ── Filter chips ─────────────────────────────────────────────────
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _filters.map((f) {
-                  final selected = _selectedFilter == f;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedFilter = f),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? AppColors.primary
-                              : const Color(0xFFF0F0F0),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          f,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: selected
-                                ? AppColors.textOnPrimary
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+          FilterChipRow<String>(
+            items: {
+              for (final name in context.appState.categoryNames) name: name,
+            },
+            selected: _selectedFilter,
+            onSelected: (v) => setState(() => _selectedFilter = v),
           ),
 
           const SizedBox(height: 1),
