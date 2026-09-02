@@ -49,6 +49,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   late List<String> _imageUrls;
   late List<MapEntry<String, String>> _specs;
   late String _stockStatus;
+  late ProductCondition _condition;
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     _specs =
         p.specifications.entries.where((e) => e.key != 'Quantity').toList();
     _stockStatus = p.stockStatus.isEmpty ? 'in_stock' : p.stockStatus;
+    _condition = p.condition;
   }
 
   @override
@@ -259,7 +261,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         stockStatus: _stockStatus,
         quantity: int.tryParse(_qtyCtrl.text.trim()) ?? 0,
         specifications: Map.fromEntries(_specs),
-        condition: widget.product.condition,
+        condition: _condition,
       );
 
       // 3. Write to Firestore.
@@ -789,6 +791,13 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
           ),
         ],
       ),
+      const SizedBox(height: 20),
+      _fieldLabel('Product Condition'),
+      const SizedBox(height: 8),
+      _ConditionSelector(
+        value: _condition,
+        onChanged: (v) => setState(() => _condition = v),
+      ),
     ]);
   }
 
@@ -1084,6 +1093,113 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
           items: cats
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
               .toList(),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Condition Selector
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ConditionSelector extends StatelessWidget {
+  final ProductCondition value;
+  final ValueChanged<ProductCondition> onChanged;
+
+  const _ConditionSelector({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _ConditionOption(
+            label: 'New',
+            icon: Icons.fiber_new_rounded,
+            selected: value == ProductCondition.newProduct,
+            onTap: () => onChanged(ProductCondition.newProduct),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _ConditionOption(
+            label: 'Fairly Used',
+            icon: Icons.recycling_rounded,
+            selected: value == ProductCondition.refurbished,
+            onTap: () => onChanged(ProductCondition.refurbished),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ConditionOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ConditionOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : const Color(0xFFF4F4F4),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? AppColors.primary : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected ? AppColors.primary : AppColors.border,
+                  width: 2,
+                ),
+                color: selected ? AppColors.primary : Colors.transparent,
+              ),
+              child: selected
+                  ? const Icon(Icons.check_rounded,
+                      size: 12, color: AppColors.textOnPrimary)
+                  : null,
+            ),
+            const SizedBox(width: 10),
+            Icon(icon,
+                size: 16,
+                color: selected ? AppColors.primary : AppColors.textSecondary),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
