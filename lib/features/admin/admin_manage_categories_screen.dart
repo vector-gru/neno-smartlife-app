@@ -4,7 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../shared/data/mock_categories.dart';
+import '../../core/services/category_service.dart';
+import '../../core/state/app_state.dart';
 import '../../shared/models/admin_category.dart';
 import 'admin_edit_category_screen.dart';
 
@@ -12,52 +13,37 @@ import 'admin_edit_category_screen.dart';
 // Admin – Manage Categories Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
-class AdminManageCategoriesScreen extends StatefulWidget {
+class AdminManageCategoriesScreen extends StatelessWidget {
   const AdminManageCategoriesScreen({super.key});
 
-  @override
-  State<AdminManageCategoriesScreen> createState() =>
-      _AdminManageCategoriesScreenState();
-}
-
-class _AdminManageCategoriesScreenState
-    extends State<AdminManageCategoriesScreen> {
-  late final List<AdminCategory> _categories =
-      List.from(MockCategories.all);
-
-  void _openEdit(AdminCategory cat) async {
-    await Navigator.of(context).push(
+  void _openEdit(BuildContext context, AdminCategory cat) {
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AdminEditCategoryScreen(
           category: cat,
           isNew: false,
-          onSave: (updated) => setState(() {
-            final i = _categories.indexWhere((c) => c.id == updated.id);
-            if (i >= 0) _categories[i] = updated;
-          }),
-          onDelete: (id) => setState(
-              () => _categories.removeWhere((c) => c.id == id)),
+          onSave: (updated) => CategoryService.instance.updateCategory(updated),
+          onDelete: (id) => CategoryService.instance.deleteCategory(id),
         ),
       ),
     );
   }
 
-  void _openAdd() async {
+  void _openAdd(BuildContext context) {
     final newCat = AdminCategory(
-      id: 'cat_${DateTime.now().millisecondsSinceEpoch}',
+      id: '',
       name: '',
       description: '',
       icon: Icons.category_rounded,
       productCount: 0,
     );
-    await Navigator.of(context).push(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => AdminEditCategoryScreen(
           category: newCat,
           isNew: true,
-          onSave: (created) =>
-              setState(() => _categories.add(created)),
-          onDelete: (_) {},
+          onSave: (created) => CategoryService.instance.createCategory(created),
+          onDelete: (_) async {},
         ),
       ),
     );
@@ -66,6 +52,8 @@ class _AdminManageCategoriesScreenState
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    final categories = context.appState.categories;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -100,7 +88,7 @@ class _AdminManageCategoriesScreenState
           ],
         ),
       ),
-      body: _categories.isEmpty
+      body: categories.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -108,23 +96,31 @@ class _AdminManageCategoriesScreenState
                   const Icon(Icons.category_outlined,
                       size: 52, color: AppColors.border),
                   const SizedBox(height: 12),
-                  Text('No categories yet',
-                      style: GoogleFonts.poppins(
-                          fontSize: 15, color: AppColors.textMuted)),
+                  Text(
+                    'No categories yet',
+                    style: GoogleFonts.poppins(
+                        fontSize: 15, color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Tap + to add your first category.',
+                    style: GoogleFonts.poppins(
+                        fontSize: 13, color: AppColors.textMuted),
+                  ),
                 ],
               ),
             )
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
-              itemCount: _categories.length,
+              itemCount: categories.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, i) => _CategoryCard(
-                category: _categories[i],
-                onTap: () => _openEdit(_categories[i]),
+                category: categories[i],
+                onTap: () => _openEdit(context, categories[i]),
               ),
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openAdd,
+        onPressed: () => _openAdd(context),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 4,
@@ -147,6 +143,11 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Live product count from Firestore catalogue
+    final liveCount = context.appState.products
+        .where((p) => p.category == category.name)
+        .length;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -155,17 +156,14 @@ class _CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x08000000),
-                blurRadius: 8,
-                offset: Offset(0, 2)),
+                color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
           ],
         ),
         child: Row(
           children: [
-            // Thumbnail / icon area
             ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(14)),
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(14)),
               child: SizedBox(
                 width: 72,
                 height: 72,
@@ -173,16 +171,13 @@ class _CategoryCard extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: category.thumbnailUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) =>
-                            _iconFallback(category.icon),
-                        errorWidget: (_, __, ___) =>
-                            _iconFallback(category.icon),
+                        placeholder: (_, __) => _iconFallback(),
+                        errorWidget: (_, __, ___) => _iconFallback(),
                       )
-                    : _iconFallback(category.icon),
+                    : _iconFallback(),
               ),
             ),
             const SizedBox(width: 14),
-            // Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,7 +192,7 @@ class _CategoryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${category.productCount} Products',
+                    '$liveCount product${liveCount == 1 ? '' : 's'}',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: AppColors.textMuted,
@@ -217,10 +212,10 @@ class _CategoryCard extends StatelessWidget {
     );
   }
 
-  Widget _iconFallback(IconData icon) => Container(
+  Widget _iconFallback() => Container(
         color: AppColors.primary.withValues(alpha: 0.08),
         child: Center(
-          child: Icon(icon, color: AppColors.primary, size: 28),
+          child: Icon(category.icon, color: AppColors.primary, size: 28),
         ),
       );
 }

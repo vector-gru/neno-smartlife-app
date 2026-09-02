@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/state/app_state.dart';
 import '../../routes/app_router.dart';
-import '../../shared/data/mock_categories.dart';
 import '../../shared/models/admin_category.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/app_search_bar.dart';
@@ -32,9 +31,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   String _searchQuery = '';
 
   List<AdminCategory> get _filtered {
-    if (_searchQuery.isEmpty) return MockCategories.all;
+    final all = context.appState.categories;
+    if (_searchQuery.isEmpty) return all;
     final q = _searchQuery.toLowerCase();
-    return MockCategories.all
+    return all
         .where((c) =>
             c.name.toLowerCase().contains(q) ||
             c.description.toLowerCase().contains(q))
@@ -140,11 +140,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off_rounded,
+          Icon(Icons.category_outlined,
               size: 52, color: AppColors.textMuted.withValues(alpha: 0.4)),
           const SizedBox(height: 12),
           Text(
-            'No categories found',
+            'No categories yet',
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -153,7 +153,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Try a different search term',
+            'Check back soon.',
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: AppColors.textMuted,

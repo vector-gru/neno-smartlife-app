@@ -13,8 +13,8 @@ import '../../shared/models/admin_category.dart';
 class AdminEditCategoryScreen extends StatefulWidget {
   final AdminCategory category;
   final bool isNew;
-  final void Function(AdminCategory) onSave;
-  final void Function(String) onDelete;
+  final Future<void> Function(AdminCategory) onSave;
+  final Future<void> Function(String) onDelete;
 
   const AdminEditCategoryScreen({
     super.key,
@@ -49,7 +49,8 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
     super.dispose();
   }
 
-  void _save() {
+  void _save() async {
+    if (_nameCtrl.text.trim().isEmpty) return;
     final updated = AdminCategory(
       id: widget.category.id,
       name: _nameCtrl.text.trim(),
@@ -58,19 +59,17 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
       productCount: widget.category.productCount,
       thumbnailUrl: _thumbnailUrl,
     );
-    widget.onSave(updated);
-    Navigator.of(context).pop();
+    await widget.onSave(updated);
+    if (mounted) Navigator.of(context).pop();
   }
 
   void _confirmDelete() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Delete Category',
-            style:
-                GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
         content: Text(
           'Delete "${_nameCtrl.text}"? Products in this category will be uncategorised.',
           style: GoogleFonts.poppins(fontSize: 14),
@@ -79,19 +78,17 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text('Cancel',
-                style: GoogleFonts.poppins(
-                    color: AppColors.textSecondary)),
+                style: GoogleFonts.poppins(color: AppColors.textSecondary)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              widget.onDelete(widget.category.id);
-              Navigator.of(context).pop();
+              await widget.onDelete(widget.category.id);
+              if (mounted) Navigator.of(context).pop();
             },
             child: Text('Delete',
                 style: GoogleFonts.poppins(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600)),
+                    color: AppColors.error, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -146,8 +143,7 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _fieldLabel('Category Name'),
-                _textField(_nameCtrl,
-                    hint: 'e.g. Smart Watches'),
+                _textField(_nameCtrl, hint: 'e.g. Smart Watches'),
                 const SizedBox(height: 16),
                 _fieldLabel('Description (Optional)'),
                 _textField(
@@ -194,10 +190,8 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                   CachedNetworkImage(
                     imageUrl: _thumbnailUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) =>
-                        const _ThumbnailPlaceholder(),
-                    errorWidget: (_, __, ___) =>
-                        const _ThumbnailPlaceholder(),
+                    placeholder: (_, __) => const _ThumbnailPlaceholder(),
+                    errorWidget: (_, __, ___) => const _ThumbnailPlaceholder(),
                   ),
                   // Overlay with replace hint
                   Container(
@@ -218,8 +212,7 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
                         Text(
                           'SVG, PNG, JPG or GIF (max. 800×400px)',
                           style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: Colors.white70),
+                              fontSize: 11, color: Colors.white70),
                         ),
                       ],
                     ),
@@ -326,12 +319,11 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
     return TextField(
       controller: ctrl,
       maxLines: maxLines,
-      style: GoogleFonts.poppins(
-          fontSize: 14, color: AppColors.textPrimary),
+      style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.poppins(
-            fontSize: 13, color: AppColors.textMuted),
+        hintStyle:
+            GoogleFonts.poppins(fontSize: 13, color: AppColors.textMuted),
         filled: true,
         fillColor: const Color(0xFFF4F4F4),
         contentPadding:
@@ -346,8 +338,7 @@ class _AdminEditCategoryScreenState extends State<AdminEditCategoryScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
     );
@@ -378,8 +369,7 @@ class _ThumbnailPlaceholder extends StatelessWidget {
         ),
         Text(
           'SVG, PNG, JPG or GIF (max. 800×400px)',
-          style: GoogleFonts.poppins(
-              fontSize: 11, color: AppColors.textMuted),
+          style: GoogleFonts.poppins(fontSize: 11, color: AppColors.textMuted),
         ),
       ],
     );

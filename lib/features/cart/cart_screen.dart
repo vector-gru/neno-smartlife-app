@@ -294,12 +294,13 @@ class CartScreen extends StatelessWidget {
   }
 
   // ─── Submit handler ─────────────────────────────────────────────────────────
-  void _onRequestPurchase(
+  Future<void> _onRequestPurchase(
     BuildContext context,
     AppLocalizations l10n,
     AppStateProviderState state,
-  ) {
-    state.submitOrder();
+  ) async {
+    await state.submitOrder();
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

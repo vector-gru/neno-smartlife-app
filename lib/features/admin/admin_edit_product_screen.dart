@@ -7,6 +7,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/cloudinary_service.dart';
+import '../../core/services/product_service.dart';
+import '../../core/state/app_state.dart';
 import '../../shared/models/product.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,15 +35,21 @@ class AdminEditProductScreen extends StatefulWidget {
 }
 
 class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
-  static const _categories = [
-    'Phones',
-    'Tablets',
-    'Headphones',
-    'Smart Watches',
-    'Televisions',
-    'Bluetooth Speakers',
-    'Accessories',
-  ];
+  // Categories are loaded from Firestore via AppStateProvider.
+  List<String> get _categories {
+    final cats = context.appState.categories.map((c) => c.name).toList();
+    return cats.isEmpty
+        ? [
+            'Phones',
+            'Tablets',
+            'Headphones',
+            'Smart Watches',
+            'Televisions',
+            'Bluetooth Speakers',
+            'Accessories'
+          ]
+        : cats;
+  }
 
   late final TextEditingController _nameCtrl;
   late final TextEditingController _priceCtrl;
@@ -88,6 +97,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
 
   static const _maxImages = 8;
   final _picker = ImagePicker();
+  bool _isSaving = false;
 
   Future<void> _showImageSourceSheet() async {
     await showModalBottomSheet<void>(
@@ -210,23 +220,70 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     }
   }
 
-  void _save() {
-    final updated = Product(
-      id: widget.product.id,
-      name: _nameCtrl.text.trim(),
-      description: _descCtrl.text.trim(),
-      price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
-      originalPrice: double.tryParse(_originalPriceCtrl.text.trim()),
-      category: _category,
-      imageUrls: _imageUrls,
-      badge: _featured ? 'HOT' : '',
-      stockStatus: _stockStatus,
-      quantity: int.tryParse(_qtyCtrl.text.trim()) ?? 0,
-      specifications: Map.fromEntries(_specs),
-      condition: widget.product.condition,
-    );
-    widget.onSave(updated);
-    Navigator.of(context).pop();
+  Future<void> _save() async {
+    // Basic validation
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Product name is required.',
+              style: GoogleFonts.poppins(fontSize: 13)),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      // 1. Upload any locally-picked images to Cloudinary.
+      //    Already-remote URLs are passed through unchanged.
+      final uploadedUrls =
+          await CloudinaryService.instance.uploadImages(_imageUrls);
+
+      // 2. Build the product with the final URLs.
+      final product = Product(
+        id: widget.product.id,
+        name: _nameCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        price: double.tryParse(_priceCtrl.text.trim()) ?? 0,
+        originalPrice: double.tryParse(_originalPriceCtrl.text.trim()),
+        category: _category,
+        imageUrls: uploadedUrls,
+        badge: _featured ? 'HOT' : '',
+        stockStatus: _stockStatus,
+        quantity: int.tryParse(_qtyCtrl.text.trim()) ?? 0,
+        specifications: Map.fromEntries(_specs),
+        condition: widget.product.condition,
+      );
+
+      // 3. Write to Firestore.
+      if (widget.isNew) {
+        await ProductService.instance.createProduct(product);
+      } else {
+        await ProductService.instance.updateProduct(product);
+      }
+
+      // 4. Also call the in-memory callback so the UI reflects the change
+      //    immediately (Firestore stream will confirm shortly after).
+      widget.onSave(product);
+
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Save failed: $e',
+                style: GoogleFonts.poppins(fontSize: 13)),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   void _confirmDelete() {
@@ -247,10 +304,13 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                 style: GoogleFonts.poppins(color: AppColors.textSecondary)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              widget.onDelete(widget.product.id);
-              Navigator.of(context).pop();
+              try {
+                await ProductService.instance.deleteProduct(widget.product.id);
+                widget.onDelete(widget.product.id);
+              } catch (_) {}
+              if (mounted) Navigator.of(context).pop();
             },
             child: Text('Delete',
                 style: GoogleFonts.poppins(
@@ -337,21 +397,33 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
-            onTap: _save,
+            onTap: _isSaving ? null : _save,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: _isSaving
+                    ? AppColors.primary.withValues(alpha: 0.5)
+                    : AppColors.primary,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(
-                'Save Product',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textOnPrimary,
-                ),
-              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation(AppColors.textOnPrimary),
+                      ),
+                    )
+                  : Text(
+                      'Save Product',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textOnPrimary,
+                      ),
+                    ),
             ),
           ),
         ),

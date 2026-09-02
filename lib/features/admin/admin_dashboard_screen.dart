@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../shared/data/mock_admin_requests.dart';
+import '../../core/state/app_state.dart';
 import '../../shared/models/admin_request.dart';
 import 'admin_manage_categories_screen.dart';
 import 'admin_products_screen.dart';
@@ -24,9 +24,8 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _navIndex = 0;
 
-  // Share the same list with the RequestsTab so approvals in overview
-  // are reflected there too.
-  late final List<AdminRequest> _requests = List.from(MockAdminRequests.all);
+  // Requests list starts empty — will be populated from Firestore later.
+  late final List<AdminRequest> _requests = [];
 
   void _approve(String id) {
     setState(() {
@@ -56,6 +55,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _OverviewTab(
             requests: _requests,
             pendingCount: _pendingCount,
+            productCount: context.appState.products.length,
             onApprove: _approve,
             onDismiss: _dismiss,
             onBackToStore: () => Navigator.of(context).pop(),
@@ -127,6 +127,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 class _OverviewTab extends StatelessWidget {
   final List<AdminRequest> requests;
   final int pendingCount;
+  final int productCount;
   final void Function(String) onApprove;
   final void Function(String) onDismiss;
   final VoidCallback onBackToStore;
@@ -135,6 +136,7 @@ class _OverviewTab extends StatelessWidget {
   const _OverviewTab({
     required this.requests,
     required this.pendingCount,
+    required this.productCount,
     required this.onApprove,
     required this.onDismiss,
     required this.onBackToStore,
@@ -178,10 +180,15 @@ class _OverviewTab extends StatelessWidget {
               padding: EdgeInsets.only(right: 16),
               child: CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage(
-                  'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100',
+                backgroundColor: AppColors.primary,
+                child: Text(
+                  'A',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textOnPrimary,
+                  ),
                 ),
-                backgroundColor: AppColors.border,
               ),
             ),
           ],
@@ -196,11 +203,11 @@ class _OverviewTab extends StatelessWidget {
                 // ── Stats grid ───────────────────────────────────────────
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: _StatCard(
                         icon: Icons.inventory_2_outlined,
                         label: 'Total Products',
-                        value: '142',
+                        value: productCount.toString(),
                         dark: false,
                       ),
                     ),
@@ -211,38 +218,11 @@ class _OverviewTab extends StatelessWidget {
                         label: 'Pending Requests',
                         value: pendingCount.toString(),
                         dark: true,
-                        hasIndicator: true,
+                        hasIndicator: pendingCount > 0,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                const Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.people_alt_outlined,
-                        label: 'Active Customers',
-                        value: '856',
-                        dark: false,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.check_circle_outline_rounded,
-                        label: 'Completed Sales',
-                        value: '2,104',
-                        dark: false,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // ── Revenue card ─────────────────────────────────────────
-                const _RevenueCard(),
 
                 const SizedBox(height: 28),
 
@@ -408,97 +388,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Revenue Card
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _RevenueCard extends StatelessWidget {
-  const _RevenueCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_outlined,
-              color: AppColors.textSecondary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Text
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL REVENUE',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '15,400,000 FCFA',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.arrow_upward_rounded,
-                      color: AppColors.success,
-                      size: 13,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '+12.5% this month',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Request Card
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'cart_item.dart';
 import 'product.dart';
 
@@ -6,6 +7,9 @@ enum OrderStatus { pending, processing, completed }
 /// Represents a submitted purchase request / order.
 class AppOrder {
   final String id;
+  final String customerId; // Firebase anonymous UID
+  final String customerName;
+  final String customerPhone;
   final List<CartItem> items;
   final DateTime purchasedAt;
   final OrderStatus status;
@@ -13,13 +17,16 @@ class AppOrder {
 
   const AppOrder({
     required this.id,
+    this.customerId = '',
+    this.customerName = '',
+    this.customerPhone = '',
     required this.items,
     required this.purchasedAt,
     this.status = OrderStatus.pending,
     this.currency = 'FCFA',
   });
 
-  double get total => items.fold(0, (sum, item) => sum + item.lineTotal);
+  double get total => items.fold(0, (acc, item) => acc + item.lineTotal);
 
   String get formattedTotal {
     final formatted = total.toStringAsFixed(0).replaceAllMapped(
@@ -60,81 +67,97 @@ class AppOrder {
   bool get isPending => status == OrderStatus.pending;
   bool get isProcessing => status == OrderStatus.processing;
   bool get isCompleted => status == OrderStatus.completed;
-}
 
-// ─── Mock orders ──────────────────────────────────────────────────────────────
-// Standalone stub products used only for order history display.
-const _macbookPro = Product(
-  id: 'mock-o1',
-  name: 'MacBook Pro 16" M3 Max',
-  description: '',
-  price: 2100000,
-  category: 'Laptops',
-  imageUrls: [
-    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600',
-  ],
-);
+  // ── Firestore serialisation ─────────────────────────────────────────────────
 
-const _appleWatchUltra = Product(
-  id: 'mock-o2',
-  name: 'Apple Watch Ultra 2',
-  description: '',
-  price: 550000,
-  category: 'Smart Watches',
-  imageUrls: [
-    'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600',
-  ],
-);
+  Map<String, dynamic> toFirestore() {
+    return {
+      'customerId': customerId,
+      'customerName': customerName,
+      'customerPhone': customerPhone,
+      'items': items
+          .map((i) => {
+                'productId': i.product.id,
+                'productName': i.product.name,
+                'productImageUrl': i.product.imageUrls.isNotEmpty
+                    ? i.product.imageUrls.first
+                    : '',
+                'price': i.product.price,
+                'currency': i.product.currency,
+                'quantity': i.quantity,
+                'variant': i.variant,
+              })
+          .toList(),
+      'total': total,
+      'currency': currency,
+      'status': status.name,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+  }
 
-const _galaxyS24 = Product(
-  id: 'mock-o3',
-  name: 'Samsung Galaxy S24 Ultra',
-  description: '',
-  price: 850000,
-  category: 'Phones',
-  imageUrls: [
-    'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600',
-  ],
-);
+  factory AppOrder.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+    List<Product> liveProducts,
+  ) {
+    final d = doc.data()!;
 
-const _sonyHeadphones = Product(
-  id: 'mock-o4',
-  name: 'Sony WH-1000XM5 Headphones',
-  description: '',
-  price: 220000,
-  category: 'Headphones',
-  imageUrls: [
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600',
-  ],
-);
+    // Reconstruct items: prefer live product if still in catalogue,
+    // otherwise use the snapshot values stored at order time.
+    final rawItems = (d['items'] as List<dynamic>?) ?? [];
+    final items = rawItems.map((raw) {
+      final map = raw as Map<String, dynamic>;
+      final productId = map['productId'] as String? ?? '';
+      Product product;
+      try {
+        product = liveProducts.firstWhere((p) => p.id == productId);
+      } catch (_) {
+        // Product deleted — reconstruct a minimal Product from snapshot
+        product = Product(
+          id: productId,
+          name: map['productName'] as String? ?? 'Deleted product',
+          description: '',
+          price: (map['price'] as num?)?.toDouble() ?? 0,
+          currency: map['currency'] as String? ?? 'FCFA',
+          category: '',
+          imageUrls: [map['productImageUrl'] as String? ?? ''],
+        );
+      }
+      return CartItem(
+        product: product,
+        quantity: map['quantity'] as int? ?? 1,
+        variant: map['variant'] as String? ?? '',
+      );
+    }).toList();
 
-class MockOrders {
-  MockOrders._();
+    OrderStatus status;
+    switch (d['status'] as String?) {
+      case 'processing':
+        status = OrderStatus.processing;
+        break;
+      case 'completed':
+        status = OrderStatus.completed;
+        break;
+      default:
+        status = OrderStatus.pending;
+    }
 
-  static final List<AppOrder> all = [
-    AppOrder(
-      id: 'ORD-7721',
-      items: [const CartItem(product: _macbookPro, quantity: 1)],
-      purchasedAt: DateTime(2023, 9, 15),
-      status: OrderStatus.completed,
-    ),
-    AppOrder(
-      id: 'ORD-6504',
-      items: [const CartItem(product: _appleWatchUltra, quantity: 1)],
-      purchasedAt: DateTime(2023, 8, 2),
-      status: OrderStatus.completed,
-    ),
-    AppOrder(
-      id: 'ORD-8812',
-      items: [const CartItem(product: _galaxyS24, quantity: 1)],
-      purchasedAt: DateTime(2024, 3, 10),
-      status: OrderStatus.pending,
-    ),
-    AppOrder(
-      id: 'ORD-9001',
-      items: [const CartItem(product: _sonyHeadphones, quantity: 2)],
-      purchasedAt: DateTime(2024, 5, 22),
-      status: OrderStatus.processing,
-    ),
-  ];
+    DateTime purchasedAt;
+    final ts = d['createdAt'];
+    if (ts is Timestamp) {
+      purchasedAt = ts.toDate();
+    } else {
+      purchasedAt = DateTime.now();
+    }
+
+    return AppOrder(
+      id: doc.id,
+      customerId: d['customerId'] as String? ?? '',
+      customerName: d['customerName'] as String? ?? '',
+      customerPhone: d['customerPhone'] as String? ?? '',
+      items: items,
+      purchasedAt: purchasedAt,
+      status: status,
+      currency: d['currency'] as String? ?? 'FCFA',
+    );
+  }
 }

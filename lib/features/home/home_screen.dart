@@ -6,7 +6,6 @@ import '../../core/l10n/app_localizations.dart';
 import '../../core/state/app_state.dart';
 import '../../features/orders/orders_screen.dart';
 import '../../features/profile/account_screen.dart';
-import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/app_search_bar.dart';
 import '../../shared/widgets/condition_badge.dart';
@@ -279,11 +278,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ─── Category chips ───────────────────────────────────────────────────────
   Widget _buildCategoryRow(AppLocalizations l10n) {
-    // Build label→value map preserving MockProducts.categories order.
-    // "All" gets the translated label while the value stays 'All' for filtering.
+    final state = context.appState;
+    final names = state.categoryNames; // ['All', ...from Firestore]
     final items = <String, String>{
-      for (final cat in MockProducts.categories)
-        (cat == 'All' ? l10n.allCategories : cat): cat,
+      for (final cat in names) (cat == 'All' ? l10n.allCategories : cat): cat,
     };
 
     return Container(

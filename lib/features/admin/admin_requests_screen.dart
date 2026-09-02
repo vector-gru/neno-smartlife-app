@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../../shared/data/mock_admin_requests.dart';
 import '../../shared/models/admin_request.dart';
 import '../../shared/widgets/app_search_bar.dart';
 import '../../shared/widgets/filter_chip_row.dart';
@@ -22,7 +21,7 @@ class AdminRequestsScreen extends StatefulWidget {
 }
 
 class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
-  late final List<AdminRequest> _requests = List.from(MockAdminRequests.all);
+  late final List<AdminRequest> _requests = [];
 
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';

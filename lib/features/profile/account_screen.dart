@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/state/app_state.dart';
+import '../../features/auth/customer_identity_sheet.dart';
 import '../../routes/app_router.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -227,6 +228,9 @@ class _AccountScreenState extends State<AccountScreen> {
 
   // ─── Profile header ──────────────────────────────────────────────────────────
   Widget _buildProfileHeader() {
+    final identity = context.appState.customerIdentity;
+    final hasIdentity = identity != null;
+
     return Column(
       children: [
         // Avatar with primary-coloured ring
@@ -240,40 +244,107 @@ class _AccountScreenState extends State<AccountScreen> {
           child: ClipOval(
             child: Container(
               color: const Color(0xFFEEF6D6),
-              child: const Icon(
-                Icons.person_rounded,
-                size: 52,
-                color: AppColors.primaryDark,
-              ),
+              child: hasIdentity
+                  // Show first letter of name as monogram
+                  ? Center(
+                      child: Text(
+                        identity.fullName.isNotEmpty
+                            ? identity.fullName[0].toUpperCase()
+                            : '?',
+                        style: GoogleFonts.poppins(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person_rounded,
+                      size: 52,
+                      color: AppColors.primaryDark,
+                    ),
             ),
           ),
         ),
         const SizedBox(height: 12),
-        Text(
-          'Jean-Pierre',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+
+        if (hasIdentity) ...[
+          // ── Known customer ──────────────────────────────────────────────
+          Text(
+            identity.fullName,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.mail_outline_rounded,
-                size: 14, color: AppColors.textMuted),
-            const SizedBox(width: 5),
-            Text(
-              'jean.pierre@example.com',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textMuted,
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.phone_outlined,
+                  size: 14, color: AppColors.textMuted),
+              const SizedBox(width: 5),
+              Text(
+                identity.phone,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          // ── Guest state ─────────────────────────────────────────────────
+          Text(
+            'Hello, Guest',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Add your name to personalise your experience',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () async {
+              await CustomerIdentitySheet.show(context);
+              setState(() {}); // refresh header after saving
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.edit_outlined,
+                      size: 14, color: AppColors.primaryDark),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Add your info',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ],
     );
   }

@@ -5,7 +5,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/state/app_state.dart';
 import '../../features/auth/customer_identity_sheet.dart';
-import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/condition_badge.dart';
 import '../../shared/widgets/product_badge.dart';
@@ -474,7 +473,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   // ─── Frequently bought together ───────────────────────────────────────────────
   Widget _buildFrequentlyBought(Product p, AppLocalizations l10n) {
-    final others = MockProducts.all.where((o) => o.id != p.id).take(3).toList();
+    final others = context.appState.products
+        .where((o) => o.id != p.id && o.category == p.category)
+        .take(3)
+        .toList();
     if (others.isEmpty) return const SizedBox.shrink();
 
     return Column(
