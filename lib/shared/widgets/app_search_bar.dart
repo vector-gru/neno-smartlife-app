@@ -21,6 +21,7 @@ class AppSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final ValueChanged<String> onChanged;
+  final FocusNode? focusNode;
 
   /// Padding around the field. Defaults to match the home screen style.
   final EdgeInsets padding;
@@ -30,6 +31,7 @@ class AppSearchBar extends StatelessWidget {
     required this.controller,
     required this.hintText,
     required this.onChanged,
+    this.focusNode,
     this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 12),
   });
 
@@ -39,6 +41,7 @@ class AppSearchBar extends StatelessWidget {
       padding: padding,
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         onChanged: onChanged,
         style: GoogleFonts.poppins(
           fontSize: 14,

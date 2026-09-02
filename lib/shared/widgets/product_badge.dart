@@ -19,8 +19,7 @@ class ProductBadge extends StatelessWidget {
                 : label == 'SALE'
                     ? AppColors.warning
                     : AppColors.primary);
-    final textColor =
-        label == 'NEW' ? AppColors.textOnPrimary : Colors.white;
+    final textColor = label == 'NEW' ? AppColors.textOnPrimary : Colors.white;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -28,7 +27,7 @@ class ProductBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
-        label,
+        label == 'HOT' ? '🔥 $label' : label,
         style: GoogleFonts.poppins(
           fontSize: 10,
           fontWeight: FontWeight.w700,

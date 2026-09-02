@@ -66,7 +66,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     _qtyCtrl = TextEditingController(
         text: p.quantity > 0 ? p.quantity.toString() : '');
     _category = p.category.isEmpty ? '' : p.category;
-    _featured = p.badge == 'HOT' || p.badge == 'NEW';
+    _featured = p.featured || p.badge == 'HOT' || p.badge == 'NEW';
     _imageUrls = List.from(p.imageUrls);
     // Exclude 'Quantity' in case it was previously stored in specs (migration safety)
     _specs =
@@ -258,6 +258,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         category: _category,
         imageUrls: uploadedUrls,
         badge: _featured ? 'HOT' : '',
+        featured: _featured,
         stockStatus: _stockStatus,
         quantity: int.tryParse(_qtyCtrl.text.trim()) ?? 0,
         specifications: Map.fromEntries(_specs),

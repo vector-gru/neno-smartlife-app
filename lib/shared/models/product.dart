@@ -18,6 +18,7 @@ class Product {
   final List<String> imageUrls;
   final String stockStatus; // 'in_stock' | 'limited' | 'out_of_stock'
   final String badge; // 'NEW' | 'HOT' | 'SALE' | ''
+  final bool featured; // pinned to top of client home screen
   final String addedAgo; // e.g. 'Today', 'Yesterday', '2 days ago'
   final double rating;
   final int reviewCount;
@@ -39,6 +40,7 @@ class Product {
     required this.imageUrls,
     this.stockStatus = 'in_stock',
     this.badge = '',
+    this.featured = false,
     this.addedAgo = 'Today',
     this.rating = 4.5,
     this.reviewCount = 0,
@@ -97,6 +99,7 @@ class Product {
       'imageUrls': imageUrls,
       'stockStatus': stockStatus,
       'badge': badge,
+      'featured': featured,
       'rating': rating,
       'reviewCount': reviewCount,
       'colorOptions': colorOptions,
@@ -122,6 +125,7 @@ class Product {
       imageUrls: List<String>.from(d['imageUrls'] as List? ?? []),
       stockStatus: d['stockStatus'] as String? ?? 'in_stock',
       badge: d['badge'] as String? ?? '',
+      featured: d['featured'] as bool? ?? false,
       rating: (d['rating'] as num?)?.toDouble() ?? 4.5,
       reviewCount: d['reviewCount'] as int? ?? 0,
       colorOptions: List<String>.from(d['colorOptions'] as List? ?? []),
@@ -152,6 +156,7 @@ class Product {
     List<String>? imageUrls,
     String? stockStatus,
     String? badge,
+    bool? featured,
     String? addedAgo,
     double? rating,
     int? reviewCount,
@@ -172,6 +177,7 @@ class Product {
       imageUrls: imageUrls ?? this.imageUrls,
       stockStatus: stockStatus ?? this.stockStatus,
       badge: badge ?? this.badge,
+      featured: featured ?? this.featured,
       addedAgo: addedAgo ?? this.addedAgo,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,

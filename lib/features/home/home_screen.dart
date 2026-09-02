@@ -78,10 +78,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _bannerIndex = 0;
   final PageController _bannerController = PageController();
   Timer? _bannerTimer;
+  bool _isSearching = false;
+  final FocusNode _searchFocus = FocusNode();
 
   void _startBannerTimer() {
     _bannerTimer?.cancel();
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    _bannerTimer = Timer.periodic(const Duration(seconds: 8), (_) {
       if (!mounted || !_bannerController.hasClients) return;
       final next = (_bannerIndex + 1) % _promoBanners.length;
       _bannerController.animateToPage(
@@ -139,7 +141,10 @@ class _HomeScreenState extends State<HomeScreen> {
               p.category.toLowerCase().contains(q))
           .toList();
     }
-    return products;
+    // Pin featured products to the top (preserve relative order within each group)
+    final featured = products.where((p) => p.featured).toList();
+    final rest = products.where((p) => !p.featured).toList();
+    return [...featured, ...rest];
   }
 
   @override
@@ -147,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchController.dispose();
     _bannerController.dispose();
     _bannerTimer?.cancel();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -166,7 +172,17 @@ class _HomeScreenState extends State<HomeScreen> {
           // ── Tab 0: Home ────────────────────────────────────────────────────
           Column(
             children: [
-              _buildSearchBar(l10n),
+              // Search bar — only visible when user activates search
+              if (_isSearching)
+                ColoredBox(
+                  color: Colors.white,
+                  child: AppSearchBar(
+                    controller: _searchController,
+                    hintText: l10n.searchHint,
+                    focusNode: _searchFocus,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                  ),
+                ),
               _buildCategoryRow(l10n),
               Expanded(
                 child: _filteredProducts.isEmpty
@@ -178,7 +194,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? const SizedBox.shrink()
                             : const SizedBox(height: 16),
                         itemBuilder: (context, i) {
-                          if (i == 0) return _buildPromoBannerSection(l10n);
+                          if (i == 0) {
+                            // Banner only shown when not actively searching
+                            return _isSearching
+                                ? const SizedBox.shrink()
+                                : _buildPromoBannerSection(l10n);
+                          }
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child:
@@ -246,6 +267,28 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       actions: [
+        // Search icon / close button
+        IconButton(
+          icon: Icon(
+            _isSearching ? Icons.close_rounded : Icons.search_rounded,
+            color: AppColors.textPrimary,
+            size: 22,
+          ),
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchQuery = '';
+                _searchController.clear();
+              } else {
+                // Focus the search field after the frame renders
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => _searchFocus.requestFocus(),
+                );
+              }
+            });
+          },
+        ),
         // Cart icon with live badge
         Stack(
           alignment: Alignment.center,
@@ -278,18 +321,6 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () => AppRouter.goToAdminArea(context),
         ),
       ],
-    );
-  }
-
-  // ─── Search bar ───────────────────────────────────────────────────────────
-  Widget _buildSearchBar(AppLocalizations l10n) {
-    return ColoredBox(
-      color: Colors.white,
-      child: AppSearchBar(
-        controller: _searchController,
-        hintText: l10n.searchHint,
-        onChanged: (v) => setState(() => _searchQuery = v),
-      ),
     );
   }
 
