@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -75,6 +77,20 @@ class _HomeScreenState extends State<HomeScreen> {
   int _bottomNavIndex = 0;
   int _bannerIndex = 0;
   final PageController _bannerController = PageController();
+  Timer? _bannerTimer;
+
+  void _startBannerTimer() {
+    _bannerTimer?.cancel();
+    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_bannerController.hasClients) return;
+      final next = (_bannerIndex + 1) % _promoBanners.length;
+      _bannerController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -109,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       });
     }
+    _startBannerTimer();
   }
 
   List<Product> get _filteredProducts {
@@ -129,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     _bannerController.dispose();
+    _bannerTimer?.cancel();
     super.dispose();
   }
 
