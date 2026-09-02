@@ -62,7 +62,10 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
     final identity = context.appState.customerIdentity;
     if (identity != null) {
       _nameController.text = identity.fullName;
-      _phoneController.text = identity.phone;
+      // Strip +237 prefix so it doesn't duplicate the prefix display
+      final phone = identity.phone;
+      _phoneController.text =
+          phone.startsWith('+237') ? phone.substring(4).trimLeft() : phone;
     }
   }
 
@@ -82,9 +85,12 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
     });
 
     try {
+      final rawPhone = _phoneController.text.trim();
+      final fullPhone =
+          rawPhone.startsWith('+237') ? rawPhone : '+237 $rawPhone';
       await context.appState.saveCustomerIdentity(
         fullName: _nameController.text.trim(),
-        phone: _phoneController.text.trim(),
+        phone: fullPhone,
       );
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -199,13 +205,14 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-]')),
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9\s]')),
                   ],
                   style: GoogleFonts.poppins(
                       fontSize: 14, color: AppColors.textPrimary),
                   decoration: _inputDecoration(
-                    hint: 'e.g. +237 6XX XXX XXX',
+                    hint: '6XX XXX XXX',
                     icon: Icons.phone_outlined,
+                    prefix: '+237 ',
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -213,7 +220,7 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
                     }
                     final digits = v.replaceAll(RegExp(r'\D'), '');
                     if (digits.length < 8) {
-                      return 'Enter a valid phone number';
+                      return 'Enter a valid Cameroonian number';
                     }
                     return null;
                   },
@@ -291,10 +298,17 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
   InputDecoration _inputDecoration({
     required String hint,
     required IconData icon,
+    String? prefix,
   }) {
     return InputDecoration(
       hintText: hint,
       prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+      prefixText: prefix,
+      prefixStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      ),
       filled: true,
       fillColor: const Color(0xFFF4F4F4),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
