@@ -9,6 +9,13 @@ import '../../shared/models/admin_request.dart';
 import 'admin_manage_categories_screen.dart';
 import 'admin_products_screen.dart';
 import 'admin_requests_screen.dart';
+import '../home/home_screen.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Menu actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum _AdminMenuAction { logout }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Admin Dashboard Screen
@@ -176,17 +183,57 @@ class _OverviewTab extends StatelessWidget {
                   color: AppColors.textPrimary, size: 22),
               onPressed: onBackToStore,
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  'A',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textOnPrimary,
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: PopupMenuButton<_AdminMenuAction>(
+                offset: const Offset(0, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (action) async {
+                  if (action == _AdminMenuAction.logout) {
+                    await context.appState.signOut();
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const HomeScreen(showSignedOutBanner: true),
+                        ),
+                        (route) => false,
+                      );
+                    }
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: _AdminMenuAction.logout,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.logout_rounded,
+                            size: 18, color: AppColors.error),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Log out',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                child: const CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.primary,
+                  child: Text(
+                    'A',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textOnPrimary,
+                    ),
                   ),
                 ),
               ),
@@ -707,23 +754,21 @@ class _AdminSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        shadowColor: AppColors.border,
-        title: Text(
-          'Settings',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
-          ),
-        ),
-      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+        padding: EdgeInsets.fromLTRB(
+            16, MediaQuery.of(context).padding.top + 16, 16, 40),
         children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 20),
+            child: Text(
+              'Settings',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
           _SettingsSection(
             title: 'Catalog',
             items: [

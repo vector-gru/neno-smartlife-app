@@ -60,7 +60,9 @@ final _promoBanners = <_PromoBanner>[
 
 // ─── HomeScreen ────────────────────────────────────────────────────────────────
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool showSignedOutBanner;
+
+  const HomeScreen({super.key, this.showSignedOutBanner = false});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -73,6 +75,41 @@ class _HomeScreenState extends State<HomeScreen> {
   int _bottomNavIndex = 0;
   int _bannerIndex = 0;
   final PageController _bannerController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.showSignedOutBanner) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: Colors.white, size: 18),
+                const SizedBox(width: 10),
+                Text(
+                  'Signed out successfully',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1A1A1A),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      });
+    }
+  }
 
   List<Product> get _filteredProducts {
     var products = context.appState.productsByCategory(_selectedCategory);
