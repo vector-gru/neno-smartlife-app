@@ -27,6 +27,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void initState() {
     super.initState();
     _selectedColor = widget.product.selectedColor;
+    _startZoomHintTimer();
   }
 
   Future<void> _handleFavouriteTap() async {
@@ -145,36 +146,77 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   // ─── Image section (sits cleanly below the app bar) ─────────────────────────
+  bool _zoomHintVisible = true;
+
+  void _startZoomHintTimer() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _zoomHintVisible = false);
+    });
+  }
+
   Widget _buildImageSection(Product p) {
     return Stack(
       children: [
-        // Main image
+        // Main image — cover fills the frame; InteractiveViewer handles zoom
         SizedBox(
-          height: 260,
+          height: 300,
           width: double.infinity,
-          child: p.imageUrls.isNotEmpty
-              ? ProductImage(
-                  url: p.imageUrls[_selectedImageIndex],
-                  fit: BoxFit.contain,
-                  errorWidget: const Center(
-                    child: Icon(Icons.image_not_supported_outlined,
-                        size: 60, color: AppColors.textMuted),
-                  ),
-                )
-              : Container(color: const Color(0xFFF8F8F8)),
+          child: ClipRect(
+            child: InteractiveViewer(
+              clipBehavior: Clip.hardEdge,
+              minScale: 1.0,
+              maxScale: 4.0,
+              child: p.imageUrls.isNotEmpty
+                  ? ProductImage(
+                      url: p.imageUrls[_selectedImageIndex],
+                      fit: BoxFit.contain,
+                      errorWidget: const Center(
+                        child: Icon(Icons.image_not_supported_outlined,
+                            size: 60, color: AppColors.textMuted),
+                      ),
+                    )
+                  : Container(color: const Color(0xFFF8F8F8)),
+            ),
+          ),
         ),
-        // NEW / HOT / SALE badge — top-left, inside image
+        // NEW / HOT / SALE badge — top-left
         if (p.badge.isNotEmpty)
           Positioned(
             top: 12,
             left: 12,
             child: ProductBadge(label: p.badge),
           ),
-        // Condition badge just below the product badge
+        // Zoom hint — bottom-right, fades out after 2 s
         Positioned(
-          top: p.badge.isNotEmpty ? 42 : 12,
-          left: 12,
-          child: ConditionBadge(condition: p.condition),
+          bottom: 10,
+          right: 10,
+          child: AnimatedOpacity(
+            opacity: _zoomHintVisible ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 500),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.zoom_in_rounded,
+                      size: 16, color: Colors.white),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Pinch to zoom',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -192,7 +234,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         itemBuilder: (context, i) {
           final isSelected = i == _selectedImageIndex;
           return GestureDetector(
-            onTap: () => setState(() => _selectedImageIndex = i),
+            onTap: () => setState(() {
+              _selectedImageIndex = i;
+              _zoomHintVisible = true;
+              _startZoomHintTimer();
+            }),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               width: 60,
@@ -524,53 +570,54 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.background,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.thumb_up_alt_outlined,
-                  size: 18, color: AppColors.background),
-              label: Text(
-                l10n.imInterested,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.background,
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.background,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.thumb_up_alt_outlined,
+                    size: 18, color: AppColors.background),
+                label: Text(
+                  l10n.imInterested,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.background,
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton.icon(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: Color(0xFFDDDDDD), width: 1.5),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.shopping_cart_outlined,
-                  size: 18, color: AppColors.textPrimary),
-              label: Text(
-                l10n.addToCart,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+          const SizedBox(width: 10),
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {},
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: Color(0xFFDDDDDD), width: 1.5),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.shopping_cart_outlined,
+                    size: 18, color: AppColors.textPrimary),
+                label: Text(
+                  l10n.addToCart,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ),
