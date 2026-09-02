@@ -169,6 +169,11 @@ class _AccountScreenState extends State<AccountScreen> {
 
           // ── Clear history button ───────────────────────────────────────────
           _buildClearHistoryButton(context, l10n, state),
+
+          const SizedBox(height: 12),
+
+          // ── Delete account button (only visible when user has identity) ────
+          if (state.hasIdentity) _buildDeleteAccountButton(context, state),
         ],
       ),
     );
@@ -483,6 +488,127 @@ class _AccountScreenState extends State<AccountScreen> {
             },
             child: Text(
               l10n.accountClearHistoryConfirm,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton(
+    BuildContext context,
+    AppStateProviderState state,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: () => _confirmDeleteAccount(context, state),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+              color: AppColors.error.withValues(alpha: 0.5), width: 1.3),
+          backgroundColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        icon: const Icon(Icons.person_remove_outlined,
+            color: AppColors.error, size: 20),
+        label: Text(
+          'Clear My Data',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppColors.error,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAccount(
+    BuildContext context,
+    AppStateProviderState state,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Clear My Data',
+          style: GoogleFonts.poppins(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: AppColors.error,
+          ),
+        ),
+        content: Text(
+          'This will permanently delete your name, phone number, saved favourites, '
+          'and purchase history from this app.\n\n'
+          'This action cannot be undone. You will become a guest again.',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            height: 1.6,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Keep My Data',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              try {
+                await state.deleteAccount();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Your data has been cleared.',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w500, color: Colors.white),
+                      ),
+                      backgroundColor: AppColors.textSecondary,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Could not clear data. Please try again.',
+                        style: GoogleFonts.poppins(color: Colors.white),
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.all(16),
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(
+              'Delete Everything',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w700,
                 color: AppColors.error,

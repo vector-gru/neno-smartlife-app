@@ -219,6 +219,15 @@ class AppStateProviderState extends State<AppStateProvider> {
         );
   }
 
+  void _subscribeToOrdersByPhone(String phone) {
+    _orderSub?.cancel();
+    _orderSub =
+        _customerDataService.watchOrdersByPhone(phone, _products).listen(
+              (orders) => setState(() => _orders = orders),
+              onError: (_) {},
+            );
+  }
+
   /// Converts the current cart into a new pending order, saves to Firestore,
   /// and clears the cart.
   Future<void> submitOrder() async {
@@ -249,6 +258,35 @@ class AppStateProviderState extends State<AppStateProvider> {
     _customerDataService.clearCart();
     _orderSub?.cancel();
     _orderSub = null;
+    // Also wipe favourites in Firestore so they don't restore on next launch
+    final uid = _authService.currentUser?.uid;
+    if (uid != null) {
+      _customerDataService.saveFavourites(uid, []);
+    }
+  }
+
+  /// Permanently deletes the customer's account and all associated data.
+  /// Irreversible. After this call the user becomes an unauthenticated guest.
+  Future<void> deleteAccount() async {
+    final uid = _authService.currentUser?.uid;
+
+    // Clear local state first
+    setState(() {
+      _cartItems.clear();
+      _favourites.clear();
+      _orders.clear();
+      _cartLoaded = false;
+    });
+    _orderSub?.cancel();
+    _orderSub = null;
+    await _customerDataService.clearCart();
+
+    // Delete Firestore data + Firebase Auth account
+    if (uid != null) {
+      await _customerDataService.saveFavourites(uid, []);
+    }
+    await _authService.deleteCurrentCustomerAccount();
+    // _onAuthStateChanged fires → sets state to unauthenticated
   }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -312,6 +350,10 @@ class AppStateProviderState extends State<AppStateProvider> {
       });
       // Restore per-customer data
       _subscribeToOrders(user.uid);
+      if (identity != null) {
+        // If we know the phone, subscribe by phone for cross-device order history
+        _subscribeToOrdersByPhone(identity.phone);
+      }
       await _loadFavourites();
       await _loadCart();
     }
@@ -332,9 +374,9 @@ class AppStateProviderState extends State<AppStateProvider> {
       _authStatus = AuthStatus.customer;
       _customerIdentity = identity;
     });
-    // Start order subscription now that we have identity
-    final uid = _authService.currentUser?.uid;
-    if (uid != null) _subscribeToOrders(uid);
+    // Start order subscription now that we have identity — use phone so
+    // orders from previous devices are also visible.
+    _subscribeToOrdersByPhone(identity.phone);
   }
 
   Future<void> signOut() async {

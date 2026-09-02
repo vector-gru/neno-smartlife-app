@@ -107,6 +107,24 @@ class CustomerDataService {
             .toList());
   }
 
+  /// Live stream of orders by phone number — used for cross-device restore.
+  Stream<List<AppOrder>> watchOrdersByPhone(
+    String phone,
+    List<Product> liveProducts,
+  ) {
+    return _db
+        .collection('orders')
+        .where('customerPhone', isEqualTo: phone)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => AppOrder.fromFirestore(
+                  doc as DocumentSnapshot<Map<String, dynamic>>,
+                  liveProducts,
+                ))
+            .toList());
+  }
+
   /// Live stream of ALL orders for the admin dashboard, newest first.
   Stream<List<AppOrder>> watchAllOrders(List<Product> liveProducts) {
     return _db
