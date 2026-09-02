@@ -116,10 +116,28 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 16),
-          child:
-              Icon(Icons.menu_rounded, color: AppColors.textPrimary, size: 26),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Center(
+                child: Text(
+                  'N',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.background,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
         title: Text(
           'Admin Dashboard',
@@ -129,18 +147,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             color: AppColors.primary,
           ),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage(
-                'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100',
-              ),
-              backgroundColor: AppColors.border,
-            ),
-          ),
-        ],
+        actions: const [],
       ),
       body: Column(
         children: [

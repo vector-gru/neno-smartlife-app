@@ -62,62 +62,71 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ─────────────────────────────────────────────────────
-            _buildHeader(),
-            // ── Search bar ─────────────────────────────────────────────────
-            _buildSearchBar(),
-            // ── Grid ───────────────────────────────────────────────────────
-            Expanded(
-              child: cats.isEmpty
-                  ? _buildEmpty()
-                  : GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.88,
-                      ),
-                      itemCount: cats.length,
-                      itemBuilder: (context, i) => _CategoryCard(
-                        category: cats[i],
-                        onTap: () => _openCategory(cats[i]),
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Categories',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              height: 1.1,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        shadowColor: AppColors.border,
+        automaticallyImplyLeading: false,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        leadingWidth: 48,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Center(
+                child: Text(
+                  'N',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.background,
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            'Browse by product type',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: AppColors.textMuted,
-            ),
+        ),
+        title: Text(
+          'Categories',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Search bar ─────────────────────────────────────────────────
+          _buildSearchBar(),
+          // ── Grid ───────────────────────────────────────────────────────
+          Expanded(
+            child: cats.isEmpty
+                ? _buildEmpty()
+                : GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.88,
+                    ),
+                    itemCount: cats.length,
+                    itemBuilder: (context, i) => _CategoryCard(
+                      category: cats[i],
+                      onTap: () => _openCategory(cats[i]),
+                    ),
+                  ),
           ),
         ],
       ),

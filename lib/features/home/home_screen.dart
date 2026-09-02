@@ -132,10 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _toggleLanguage() {
-    LocaleProvider.of(context).toggle();
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -192,7 +188,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ─── App bar ──────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
-    final lang = LocaleProvider.of(context).language;
     final cartCount = context.appState.cartCount;
     return AppBar(
       backgroundColor: Colors.white,
@@ -233,39 +228,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       actions: [
-        // Language toggle
-        GestureDetector(
-          onTap: _toggleLanguage,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border, width: 1.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '🌐',
-                  style: TextStyle(fontSize: 13),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  lang == AppLanguage.en ? 'EN' : 'FR',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(width: 2),
-                const Icon(Icons.swap_horiz_rounded,
-                    size: 14, color: AppColors.textMuted),
-              ],
-            ),
-          ),
-        ),
         // Cart icon with live badge
         Stack(
           alignment: Alignment.center,

@@ -162,10 +162,28 @@ class _OverviewTab extends StatelessWidget {
           scrolledUnderElevation: 1,
           shadowColor: AppColors.border,
           systemOverlayStyle: SystemUiOverlayStyle.dark,
-          leading: const Padding(
-            padding: EdgeInsets.only(left: 16),
-            child: Icon(Icons.menu_rounded,
-                color: AppColors.textPrimary, size: 26),
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Center(
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Center(
+                  child: Text(
+                    'N',
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.background,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
           title: Text(
             'Admin Dashboard',
@@ -760,13 +778,36 @@ class _AdminSettingsScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 20),
-            child: Text(
-              'Settings',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'N',
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.background,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Settings',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
             ),
           ),
           _SettingsSection(

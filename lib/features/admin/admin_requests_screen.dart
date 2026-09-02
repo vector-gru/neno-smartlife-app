@@ -86,15 +86,38 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
         automaticallyImplyLeading: false,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Center(
+                child: Text(
+                  'N',
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.background,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Customer Requests',
               style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
               ),
             ),
             Text(
@@ -104,7 +127,7 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
             ),
           ],
         ),
-        toolbarHeight: 72,
+        toolbarHeight: kToolbarHeight,
       ),
       body: Column(
         children: [
