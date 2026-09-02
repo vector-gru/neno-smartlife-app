@@ -124,6 +124,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     itemCount: cats.length,
                     itemBuilder: (context, i) => _CategoryCard(
                       category: cats[i],
+                      productCount: context.appState
+                          .productsByCategory(cats[i].name)
+                          .length,
                       onTap: () => _openCategory(cats[i]),
                     ),
                   ),
@@ -180,9 +183,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
 class _CategoryCard extends StatelessWidget {
   final AdminCategory category;
+  final int productCount;
   final VoidCallback onTap;
 
-  const _CategoryCard({required this.category, required this.onTap});
+  const _CategoryCard({
+    required this.category,
+    required this.productCount,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +272,7 @@ class _CategoryCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        '${category.productCount} products',
+                        '$productCount products',
                         style: GoogleFonts.poppins(
                           fontSize: 11,
                           color: AppColors.textMuted,
