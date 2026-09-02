@@ -143,8 +143,8 @@ class _OrdersScreenState extends State<OrdersScreen>
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.shopping_bag_outlined,
-                  color: AppColors.textPrimary, size: 24),
+              icon: const Icon(Icons.shopping_cart_outlined,
+                  color: AppColors.textPrimary, size: 22),
               onPressed: () => AppRouter.goToCart(context),
             ),
             if (state.cartCount > 0)
@@ -235,10 +235,8 @@ class _PillTabBarState extends State<_PillTabBar> {
                   widget.labels[i],
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    fontWeight:
-                        active ? FontWeight.w700 : FontWeight.w500,
-                    color:
-                        active ? Colors.white : AppColors.textSecondary,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active ? Colors.white : AppColors.textSecondary,
                   ),
                 ),
               ),
