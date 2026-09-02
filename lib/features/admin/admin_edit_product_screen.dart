@@ -36,20 +36,8 @@ class AdminEditProductScreen extends StatefulWidget {
 
 class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   // Categories are loaded from Firestore via AppStateProvider.
-  List<String> get _categories {
-    final cats = context.appState.categories.map((c) => c.name).toList();
-    return cats.isEmpty
-        ? [
-            'Phones',
-            'Tablets',
-            'Headphones',
-            'Smart Watches',
-            'Televisions',
-            'Bluetooth Speakers',
-            'Accessories'
-          ]
-        : cats;
-  }
+  List<String> get _categories =>
+      context.appState.categories.map((c) => c.name).toList();
 
   late final TextEditingController _nameCtrl;
   late final TextEditingController _priceCtrl;
@@ -76,7 +64,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
     _descCtrl = TextEditingController(text: p.description);
     _qtyCtrl = TextEditingController(
         text: p.quantity > 0 ? p.quantity.toString() : '');
-    _category = p.category.isEmpty ? _categories.first : p.category;
+    _category = p.category.isEmpty ? '' : p.category;
     _featured = p.badge == 'HOT' || p.badge == 'NEW';
     _imageUrls = List.from(p.imageUrls);
     // Exclude 'Quantity' in case it was previously stored in specs (migration safety)
@@ -229,6 +217,22 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
               style: GoogleFonts.poppins(fontSize: 13)),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (_category.isEmpty || !_categories.contains(_category)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _categories.isEmpty
+                ? 'Please add a category first before saving a product.'
+                : 'Please select a category.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -1018,6 +1022,45 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   }
 
   Widget _categoryDropdown() {
+    final cats = _categories;
+    final noneYet = cats.isEmpty;
+
+    // If current _category is no longer in the list (e.g. category was deleted),
+    // reset it so the dropdown doesn't show an invalid value.
+    if (!noneYet && _category.isNotEmpty && !cats.contains(_category)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _category = '');
+      });
+    }
+
+    if (noneYet) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4F4F4),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded,
+                color: AppColors.warning, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'No categories yet — add one in Manage Categories first.',
+                style: GoogleFonts.poppins(
+                    fontSize: 13, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Ensure the dropdown value is always valid
+    final effectiveValue = cats.contains(_category) ? _category : null;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
@@ -1026,7 +1069,10 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _category,
+          value: effectiveValue,
+          hint: Text('Select a category',
+              style: GoogleFonts.poppins(
+                  fontSize: 14, color: AppColors.textMuted)),
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down_rounded,
               color: AppColors.textSecondary),
@@ -1035,7 +1081,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
           onChanged: (v) {
             if (v != null) setState(() => _category = v);
           },
-          items: _categories
+          items: cats
               .map((c) => DropdownMenuItem(value: c, child: Text(c)))
               .toList(),
         ),
