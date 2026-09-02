@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/state/app_state.dart';
+import '../../features/auth/customer_identity_sheet.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/condition_badge.dart';
@@ -21,7 +23,6 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _selectedImageIndex = 0;
   String _selectedColor = '';
-  bool _isFavourite = false;
 
   @override
   void initState() {
@@ -29,10 +30,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     _selectedColor = widget.product.selectedColor;
   }
 
+  Future<void> _handleFavouriteTap() async {
+    final state = context.appState;
+    // If already a favourite, just untoggle — no identity needed to remove.
+    if (state.isFavourite(widget.product.id)) {
+      state.toggleFavourite(widget.product);
+      return;
+    }
+    // Adding: require identity first.
+    if (!state.hasIdentity) {
+      final saved = await CustomerIdentitySheet.show(context);
+      if (!saved) return;
+    }
+    state.toggleFavourite(widget.product);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.product;
     final l10n = context.l10n;
+    final isFavourite = context.appState.isFavourite(p.id);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
     return Scaffold(
@@ -72,7 +89,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         // Favourite lives in the app bar — no longer floating over the image
         actions: [
           GestureDetector(
-            onTap: () => setState(() => _isFavourite = !_isFavourite),
+            onTap: _handleFavouriteTap,
             child: Container(
               margin: const EdgeInsets.only(right: 12),
               width: 36,
@@ -88,11 +105,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ],
               ),
               child: Icon(
-                _isFavourite
+                isFavourite
                     ? Icons.favorite_rounded
                     : Icons.favorite_border_rounded,
                 size: 19,
-                color: _isFavourite ? AppColors.error : AppColors.textMuted,
+                color: isFavourite ? AppColors.error : AppColors.textMuted,
               ),
             ),
           ),

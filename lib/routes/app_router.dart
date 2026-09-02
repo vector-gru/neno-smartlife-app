@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../core/auth/auth_models.dart';
+import '../core/state/app_state.dart';
 import '../features/admin/admin_dashboard_screen.dart';
+import '../features/auth/admin_login_screen.dart';
 import '../features/cart/cart_screen.dart';
 import '../features/favorites/favourites_screen.dart';
 import '../features/home/home_screen.dart';
@@ -18,6 +21,7 @@ class AppRouter {
   static const String cart = '/cart';
   static const String favourites = '/favourites';
   static const String orders = '/orders';
+  static const String adminLogin = '/admin-login';
   static const String adminDashboard = '/admin';
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
@@ -77,14 +81,29 @@ class AppRouter {
     );
   }
 
-  /// Navigate to the admin dashboard.
-  static void goToAdminDashboard(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const AdminDashboardScreen(),
-        settings: const RouteSettings(name: adminDashboard),
-      ),
-    );
+  /// Auth-aware entry point for the admin area.
+  ///
+  /// - Already signed in as admin → goes straight to the dashboard.
+  /// - Not an admin → shows the login screen; the login screen itself
+  ///   does pushReplacement to the dashboard on success.
+  static void goToAdminArea(BuildContext context) {
+    final isAdmin = AppStateProvider.of(context).authStatus == AuthStatus.admin;
+
+    if (isAdmin) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const AdminDashboardScreen(),
+          settings: const RouteSettings(name: adminDashboard),
+        ),
+      );
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const AdminLoginScreen(),
+          settings: const RouteSettings(name: adminLogin),
+        ),
+      );
+    }
   }
 
   // ── Named route generator ──────────────────────────────────────────────────
@@ -100,6 +119,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const FavouritesScreen());
       case orders:
         return MaterialPageRoute(builder: (_) => const OrdersScreen());
+      case adminLogin:
+        return MaterialPageRoute(builder: (_) => const AdminLoginScreen());
       case adminDashboard:
         return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
       default:

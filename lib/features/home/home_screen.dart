@@ -15,6 +15,7 @@ import '../../shared/widgets/product_image.dart';
 import '../../shared/widgets/product_badge.dart';
 import '../../shared/widgets/stock_chip.dart';
 import '../../features/categories/categories_screen.dart';
+import '../../features/auth/customer_identity_sheet.dart';
 import '../../routes/app_router.dart';
 
 // ─── Promo banner data model ───────────────────────────────────────────────────
@@ -258,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
           tooltip: 'Admin',
           icon: const Icon(Icons.admin_panel_settings_outlined,
               color: AppColors.textPrimary, size: 22),
-          onPressed: () => AppRouter.goToAdminDashboard(context),
+          onPressed: () => AppRouter.goToAdminArea(context),
         ),
       ],
     );
@@ -657,7 +658,14 @@ class _ProductCardState extends State<_ProductCard> {
                   top: 8,
                   right: 8,
                   child: GestureDetector(
-                    onTap: () => state.toggleFavourite(p),
+                    onTap: () async {
+                      // Require identity before saving a favourite.
+                      if (!state.hasIdentity) {
+                        final saved = await CustomerIdentitySheet.show(context);
+                        if (!saved) return;
+                      }
+                      state.toggleFavourite(p);
+                    },
                     child: Container(
                       width: 34,
                       height: 34,

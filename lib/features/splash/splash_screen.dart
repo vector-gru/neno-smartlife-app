@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../routes/app_router.dart';
 
@@ -23,6 +24,9 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _scaleAnim;
   late Animation<double> _taglineFade;
   late Animation<double> _pulseAnim;
+
+  // Resolved during the animation so we don't block the first frame.
+  bool _onboardingDone = false;
 
   @override
   void initState() {
@@ -64,17 +68,29 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _runSequence() async {
+    // Read the flag concurrently with the opening animation — zero extra delay.
+    final prefsFuture = SharedPreferences.getInstance();
+
     await Future.delayed(const Duration(milliseconds: 200));
     _fadeController.forward();
     _scaleController.forward();
     await Future.delayed(const Duration(milliseconds: 600));
     _taglineController.forward();
+
+    // Ensure prefs are ready before we navigate.
+    final prefs = await prefsFuture;
+    _onboardingDone = prefs.getBool('onboarding_done') ?? false;
+
     await Future.delayed(const Duration(milliseconds: 1800));
     if (mounted) _navigate();
   }
 
   void _navigate() {
-    AppRouter.navigateFromSplash(context);
+    if (_onboardingDone) {
+      AppRouter.completeOnboarding(context); // go straight to home
+    } else {
+      AppRouter.navigateFromSplash(context); // go to onboarding
+    }
   }
 
   @override

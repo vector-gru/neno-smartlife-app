@@ -1,8 +1,13 @@
 // Lightweight app-wide state manager using InheritedWidget + StatefulWidget.
-// Holds cart items, favourites, and orders — no external packages needed.
+// Holds cart items, favourites, orders, and auth state.
 // Mirrors the same pattern already used by LocaleProvider in app_localizations.dart.
 
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../auth/auth_models.dart';
+import '../auth/auth_service.dart';
 import '../../shared/data/mock_products.dart';
 import '../../shared/models/cart_item.dart';
 import '../../shared/models/order.dart';
@@ -25,6 +30,88 @@ class AppStateProvider extends StatefulWidget {
 }
 
 class AppStateProviderState extends State<AppStateProvider> {
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  final AuthService _authService = AuthService.instance;
+  StreamSubscription<User?>? _authSub;
+
+  AuthStatus _authStatus = AuthStatus.loading;
+  CustomerIdentity? _customerIdentity;
+
+  AuthStatus get authStatus => _authStatus;
+
+  /// True when the signed-in Firebase user used email/password (admin).
+  bool get isAdmin => _authStatus == AuthStatus.admin;
+
+  /// True when a customer has provided their name + phone this session.
+  bool get hasIdentity => _customerIdentity != null;
+
+  CustomerIdentity? get customerIdentity => _customerIdentity;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSub = _authService.authStateChanges.listen(_onAuthStateChanged);
+  }
+
+  Future<void> _onAuthStateChanged(User? user) async {
+    if (user == null) {
+      setState(() {
+        _authStatus = AuthStatus.unauthenticated;
+        _customerIdentity = null;
+      });
+      return;
+    }
+
+    if (_authService.isAdmin) {
+      setState(() {
+        _authStatus = AuthStatus.admin;
+        _customerIdentity = null;
+      });
+    } else {
+      // Anonymous session — try to restore a previously saved identity.
+      final identity = await _authService.fetchCustomerIdentity();
+      setState(() {
+        _authStatus = AuthStatus.customer;
+        _customerIdentity = identity;
+      });
+    }
+  }
+
+  /// Sign in as admin with email + password.
+  /// Throws [FirebaseAuthException] on failure.
+  Future<void> signInAdmin({
+    required String email,
+    required String password,
+  }) =>
+      _authService.signInAdmin(email: email, password: password);
+
+  /// Save a customer identity (name + phone) to Firestore and update state.
+  Future<void> saveCustomerIdentity({
+    required String fullName,
+    required String phone,
+  }) async {
+    final identity = await _authService.saveCustomerIdentity(
+      fullName: fullName,
+      phone: phone,
+    );
+    setState(() {
+      _authStatus = AuthStatus.customer;
+      _customerIdentity = identity;
+    });
+  }
+
+  /// Sign out the current user (admin or anonymous customer).
+  Future<void> signOut() async {
+    await _authService.signOut();
+    // _onAuthStateChanged will fire and update state.
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
   // ── Product Catalogue ──────────────────────────────────────────────────────
   // Mutable in-memory copy of the catalogue. Seeded from MockProducts at
   // startup and kept in sync across admin and customer views for the session.
