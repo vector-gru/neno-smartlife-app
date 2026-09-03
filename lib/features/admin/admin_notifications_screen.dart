@@ -53,7 +53,11 @@ class _NotifEntry {
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 class AdminNotificationsScreen extends StatelessWidget {
-  const AdminNotificationsScreen({super.key});
+  /// Called when the admin taps a purchase request notification.
+  /// The caller (dashboard) should switch to the Requests tab.
+  final VoidCallback? onGoToRequests;
+
+  const AdminNotificationsScreen({super.key, this.onGoToRequests});
 
   @override
   Widget build(BuildContext context) {
@@ -247,12 +251,8 @@ class AdminNotificationsScreen extends StatelessWidget {
     if (!req.seenByAdmin) {
       PurchaseRequestService.instance.markPurchaseSeen(req.id);
     }
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _PurchaseDetailSheet(request: req),
-    );
+    Navigator.of(context).pop();
+    onGoToRequests?.call();
   }
 
   void _confirmDeletePurchase(BuildContext context, String id) {
@@ -749,114 +749,6 @@ class _InterestDetailSheet extends StatelessWidget {
                     fontSize: 14, fontWeight: FontWeight.w700),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Purchase detail sheet
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _PurchaseDetailSheet extends StatelessWidget {
-  final AdminRequest request;
-
-  const _PurchaseDetailSheet({required this.request});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-          24, 0, 24, MediaQuery.of(context).padding.bottom + 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _dragHandle(),
-          Text('Purchase Request',
-              style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary)),
-          const SizedBox(height: 6),
-          Text(
-            DateFormat('MMMM dd, yyyy • HH:mm').format(request.requestedAt),
-            style:
-                GoogleFonts.poppins(fontSize: 12, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 20),
-          const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 20),
-          _DetailRow(
-              icon: Icons.person_outline_rounded,
-              label: 'Customer',
-              value: request.customerName.isNotEmpty
-                  ? request.customerName
-                  : 'Anonymous'),
-          const SizedBox(height: 14),
-          _DetailRow(
-              icon: Icons.phone_outlined,
-              label: 'Phone',
-              value: request.phone.isNotEmpty ? request.phone : 'Not provided'),
-          const SizedBox(height: 14),
-          // Products list
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: const Icon(Icons.shopping_bag_outlined,
-                    size: 17, color: AppColors.primaryDark),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Items',
-                        style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textMuted,
-                            letterSpacing: 0.4)),
-                    const SizedBox(height: 4),
-                    ...request.products.map(
-                      (p) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Text(p.name,
-                            style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _DetailRow(
-            icon: Icons.flag_outlined,
-            label: 'Status',
-            value: request.statusLabel,
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'Manage this request from the Requests screen.',
-            style: GoogleFonts.poppins(
-                fontSize: 12, color: AppColors.textMuted, height: 1.5),
           ),
         ],
       ),

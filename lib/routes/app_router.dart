@@ -115,10 +115,14 @@ class AppRouter {
   }
 
   /// Navigate to admin notification / interest requests screen.
-  static void goToAdminNotifications(BuildContext context) {
+  static void goToAdminNotifications(
+    BuildContext context, {
+    VoidCallback? onGoToRequests,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const AdminNotificationsScreen(),
+        builder: (_) =>
+            AdminNotificationsScreen(onGoToRequests: onGoToRequests),
         settings: const RouteSettings(name: adminNotifications),
       ),
     );

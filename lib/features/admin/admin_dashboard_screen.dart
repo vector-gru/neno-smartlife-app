@@ -91,8 +91,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onDismiss: _dismiss,
             onBackToStore: () => Navigator.of(context).pop(),
             onViewAll: () => setState(() => _navIndex = 1),
-            onOpenNotifications: () =>
-                AppRouter.goToAdminNotifications(context),
+            onOpenNotifications: () => AppRouter.goToAdminNotifications(
+              context,
+              onGoToRequests: () => setState(() => _navIndex = 1),
+            ),
           ),
           const _RequestsTab(),
           const AdminProductsScreen(),
