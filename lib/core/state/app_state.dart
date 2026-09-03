@@ -14,6 +14,7 @@ import '../services/customer_data_service.dart';
 import '../services/interest_request_service.dart';
 import '../services/notification_service.dart';
 import '../services/product_service.dart';
+import '../services/purchase_request_service.dart';
 import '../../shared/models/admin_category.dart';
 import '../../shared/models/cart_item.dart';
 import '../../shared/models/order.dart';
@@ -43,6 +44,7 @@ class AppStateProviderState extends State<AppStateProvider> {
   final _customerDataService = CustomerDataService.instance;
   final _notificationService = NotificationService.instance;
   final _interestService = InterestRequestService.instance;
+  final _purchaseRequestService = PurchaseRequestService.instance;
 
   // ── Subscriptions ──────────────────────────────────────────────────────────
   StreamSubscription<User?>? _authSub;
@@ -257,6 +259,14 @@ class AppStateProviderState extends State<AppStateProvider> {
       status: OrderStatus.pending,
     );
     await _customerDataService.createOrder(order);
+    // Also write a purchase_requests document so the admin sees it on the
+    // Requests screen immediately.
+    await _purchaseRequestService.submitRequest(
+      customerId: uid,
+      customerName: _customerIdentity?.fullName ?? '',
+      customerPhone: _customerIdentity?.phone ?? '',
+      items: List.from(_cartItems),
+    );
     clearCart();
     // _orderSub stream will update _orders automatically
   }

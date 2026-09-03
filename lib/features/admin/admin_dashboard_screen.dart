@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/interest_request_service.dart';
+import '../../core/services/purchase_request_service.dart';
 import '../../core/state/app_state.dart';
 import '../../routes/app_router.dart';
 import '../../shared/models/admin_request.dart';
@@ -33,21 +36,40 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _navIndex = 0;
 
-  // Requests list starts empty — will be populated from Firestore later.
-  late final List<AdminRequest> _requests = [];
+  final _purchaseService = PurchaseRequestService.instance;
+  StreamSubscription<List<AdminRequest>>? _requestSub;
+  List<AdminRequest> _requests = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _requestSub = _purchaseService.watchAllRequests().listen(
+          (list) => setState(() => _requests = list),
+          // ignore: avoid_print
+          onError: (e) => print('[AdminDashboard] requests stream error: $e'),
+        );
+  }
+
+  @override
+  void dispose() {
+    _requestSub?.cancel();
+    super.dispose();
+  }
 
   void _approve(String id) {
     setState(() {
-      final req = _requests.firstWhere((r) => r.id == id);
-      req.status = CustomerRequestStatus.confirmed;
+      _requests.firstWhere((r) => r.id == id).status =
+          CustomerRequestStatus.confirmed;
     });
+    _purchaseService.updateStatus(id, CustomerRequestStatus.confirmed);
   }
 
   void _dismiss(String id) {
     setState(() {
-      final req = _requests.firstWhere((r) => r.id == id);
-      req.status = CustomerRequestStatus.rejected;
+      _requests.firstWhere((r) => r.id == id).status =
+          CustomerRequestStatus.rejected;
     });
+    _purchaseService.updateStatus(id, CustomerRequestStatus.rejected);
   }
 
   int get _pendingCount => _requests.where((r) => r.isPending).length;

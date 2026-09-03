@@ -4,8 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import 'dart:async';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
+import '../../core/services/purchase_request_service.dart';
 import '../../routes/app_router.dart';
 import '../../shared/models/admin_request.dart';
 import '../../shared/widgets/app_search_bar.dart';
@@ -23,7 +26,10 @@ class AdminRequestsScreen extends StatefulWidget {
 }
 
 class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
-  late final List<AdminRequest> _requests = [];
+  final _service = PurchaseRequestService.instance;
+  StreamSubscription<List<AdminRequest>>? _sub;
+
+  List<AdminRequest> _requests = [];
 
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
@@ -54,21 +60,28 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     return list;
   }
 
-  void _confirm(String id) => setState(() {
-        _requests.firstWhere((r) => r.id == id).status =
-            CustomerRequestStatus.confirmed;
-      });
+  void _confirm(String id) {
+    setState(() {
+      _requests.firstWhere((r) => r.id == id).status =
+          CustomerRequestStatus.confirmed;
+    });
+    _service.updateStatus(id, CustomerRequestStatus.confirmed);
+  }
 
-  void _reject(String id) => setState(() {
-        _requests.firstWhere((r) => r.id == id).status =
-            CustomerRequestStatus.rejected;
-      });
+  void _reject(String id) {
+    setState(() {
+      _requests.firstWhere((r) => r.id == id).status =
+          CustomerRequestStatus.rejected;
+    });
+    _service.updateStatus(id, CustomerRequestStatus.rejected);
+  }
 
   void _startDiscussion(String id) async {
     setState(() {
       _requests.firstWhere((r) => r.id == id).status =
           CustomerRequestStatus.inDiscussion;
     });
+    _service.updateStatus(id, CustomerRequestStatus.inDiscussion);
     final req = _requests.firstWhere((r) => r.id == id);
     await ChatService.instance.ensureThread(
       chatId: req.id,
@@ -89,7 +102,18 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _sub = _service.watchAllRequests().listen(
+          (list) => setState(() => _requests = list),
+          // ignore: avoid_print
+          onError: (e) => print('[AdminRequestsScreen] stream error: $e'),
+        );
+  }
+
+  @override
   void dispose() {
+    _sub?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
