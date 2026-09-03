@@ -1068,7 +1068,34 @@ class _ProductCardState extends State<_ProductCard> {
                       ),
                       const SizedBox(width: 10),
                       GestureDetector(
-                        onTap: () => AppRouter.goToCart(context),
+                        onTap: () {
+                          state.addToCart(p);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_rounded,
+                                      color: Colors.white, size: 18),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Added to cart',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: const Color(0xFF1A1A1A),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.all(16),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
                         child: Container(
                           width: 42,
                           height: 42,
