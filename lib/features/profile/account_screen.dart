@@ -222,9 +222,10 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.search_rounded,
+          tooltip: 'Admin',
+          icon: const Icon(Icons.admin_panel_settings_outlined,
               color: AppColors.textPrimary, size: 24),
-          onPressed: () => AppRouter.goToHome(context),
+          onPressed: () => AppRouter.goToAdminArea(context),
         ),
         const SizedBox(width: 4),
       ],

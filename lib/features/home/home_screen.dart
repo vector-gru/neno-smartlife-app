@@ -369,13 +369,6 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-        // Admin dashboard shortcut
-        IconButton(
-          tooltip: 'Admin',
-          icon: const Icon(Icons.admin_panel_settings_outlined,
-              color: AppColors.textPrimary, size: 22),
-          onPressed: () => AppRouter.goToAdminArea(context),
-        ),
       ],
     );
   }
