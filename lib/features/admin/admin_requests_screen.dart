@@ -85,7 +85,7 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     final req = _requests.firstWhere((r) => r.id == id);
     await ChatService.instance.ensureThread(
       chatId: req.id,
-      customerId: req.id, // AdminRequest has no separate customerId
+      customerId: req.customerId.isNotEmpty ? req.customerId : req.id,
       customerName: req.customerName,
       customerPhone: req.phone,
       productName: req.productName,

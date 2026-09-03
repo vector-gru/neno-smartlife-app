@@ -13,6 +13,7 @@ import '../services/chat_service.dart';
 import '../services/customer_data_service.dart';
 import '../services/interest_request_service.dart';
 import '../services/notification_service.dart';
+import '../services/order_notification_service.dart';
 import '../services/product_service.dart';
 import '../services/purchase_request_service.dart';
 import '../../shared/models/admin_category.dart';
@@ -46,6 +47,7 @@ class AppStateProviderState extends State<AppStateProvider> {
   final _notificationService = NotificationService.instance;
   final _interestService = InterestRequestService.instance;
   final _purchaseRequestService = PurchaseRequestService.instance;
+  final _orderNotificationService = OrderNotificationService.instance;
 
   // ── Subscriptions ──────────────────────────────────────────────────────────
   StreamSubscription<User?>? _authSub;
@@ -53,6 +55,7 @@ class AppStateProviderState extends State<AppStateProvider> {
   StreamSubscription<List<AdminCategory>>? _categorySub;
   StreamSubscription<List<AppOrder>>? _orderSub;
   StreamSubscription<List<InterestRequest>>? _interestSub;
+  StreamSubscription<List<OrderNotification>>? _orderNotifSub;
   StreamSubscription<List<AdminRequest>>? _purchaseRequestSub;
   StreamSubscription? _chatSub;
 
@@ -308,6 +311,8 @@ class AppStateProviderState extends State<AppStateProvider> {
     _orderSub = null;
     _chatSub?.cancel();
     _chatSub = null;
+    _orderNotifSub?.cancel();
+    _orderNotifSub = null;
 
     // 2. Wipe local state immediately so the UI reflects the change at once.
     setState(() {
@@ -336,6 +341,7 @@ class AppStateProviderState extends State<AppStateProvider> {
         _purchaseRequestService.deleteRequestsByPhone(phone),
         _interestService.deleteRequestsByPhone(phone),
         ChatService.instance.deleteThreadsByPhone(phone),
+        _orderNotificationService.deleteByPhone(phone),
       ]);
     }
     if (uid != null) {
@@ -344,6 +350,7 @@ class AppStateProviderState extends State<AppStateProvider> {
         _purchaseRequestService.deleteRequestsByUid(uid),
         _interestService.deleteRequestsByUid(uid),
         ChatService.instance.deleteThreadsByUid(uid),
+        _orderNotificationService.deleteByUid(uid),
       ]);
     }
     await Future.wait(futures);
@@ -379,6 +386,8 @@ class AppStateProviderState extends State<AppStateProvider> {
     _orderSub = null;
     _chatSub?.cancel();
     _chatSub = null;
+    _orderNotifSub?.cancel();
+    _orderNotifSub = null;
 
     // 2. Clear local state immediately.
     setState(() {
@@ -402,6 +411,7 @@ class AppStateProviderState extends State<AppStateProvider> {
         _purchaseRequestService.deleteRequestsByPhone(phone),
         _interestService.deleteRequestsByPhone(phone),
         ChatService.instance.deleteThreadsByPhone(phone),
+        _orderNotificationService.deleteByPhone(phone),
       ]);
     }
     if (uid != null) {
@@ -410,6 +420,7 @@ class AppStateProviderState extends State<AppStateProvider> {
         _purchaseRequestService.deleteRequestsByUid(uid),
         _interestService.deleteRequestsByUid(uid),
         ChatService.instance.deleteThreadsByUid(uid),
+        _orderNotificationService.deleteByUid(uid),
       ]);
     }
     await Future.wait(futures);
@@ -529,6 +540,31 @@ class AppStateProviderState extends State<AppStateProvider> {
     );
   }
 
+  // ── Customer: order status notifications ──────────────────────────────────
+
+  /// Dedup set — prevents re-notifying if the stream re-emits on reconnect.
+  final Set<String> _notifiedOrderNotifIds = {};
+
+  void _subscribeToOrderNotifications(String customerId) {
+    _orderNotifSub?.cancel();
+    final phone = _customerIdentity?.phone;
+    if (phone == null || phone.isEmpty) return; // no phone → no stream yet
+
+    _orderNotifSub = _orderNotificationService.watchNewByPhone(phone).listen(
+      (notifications) async {
+        for (final n in notifications) {
+          if (_notifiedOrderNotifIds.contains(n.id)) continue;
+          _notifiedOrderNotifIds.add(n.id);
+          await _notificationService.showOrderStatusNotification(
+            productName: n.productName,
+            status: n.status,
+          );
+        }
+      },
+      onError: (_) {},
+    );
+  }
+
   // ── Customer: chat message notifications ──────────────────────────────────
 
   /// Watches the customer's chat threads for new messages from admin.
@@ -618,6 +654,8 @@ class AppStateProviderState extends State<AppStateProvider> {
       _orderSub = null;
       _chatSub?.cancel();
       _chatSub = null;
+      _orderNotifSub?.cancel();
+      _orderNotifSub = null;
       await _customerDataService.clearCart();
       return;
     }
@@ -662,6 +700,8 @@ class AppStateProviderState extends State<AppStateProvider> {
       await _loadCart();
       // Listen for admin messages and show local notifications
       _subscribeToChatNotifications(user.uid);
+      // Listen for order status updates (confirmed / inDiscussion)
+      _subscribeToOrderNotifications(user.uid);
     }
   }
 
@@ -683,6 +723,8 @@ class AppStateProviderState extends State<AppStateProvider> {
     // Start order subscription now that we have identity — use phone so
     // orders from previous devices are also visible.
     _subscribeToOrdersByPhone(identity.phone);
+    // Now that we have a phone, start listening for order status notifications.
+    _subscribeToOrderNotifications(identity.uid);
     // Save this device's FCM token so admin messages can trigger notifications.
     final token = await _notificationService.getToken();
     if (token != null) {
@@ -705,6 +747,9 @@ class AppStateProviderState extends State<AppStateProvider> {
     _notifiedPurchaseRequestIds.clear();
     _chatSub?.cancel();
     _chatSub = null;
+    _orderNotifSub?.cancel();
+    _orderNotifSub = null;
+    _notifiedOrderNotifIds.clear();
     await _authService.signOut();
     // After admin signs out Firebase Auth has no current user. Re-establish
     // the anonymous customer session so the customer side of the app works
@@ -721,6 +766,7 @@ class AppStateProviderState extends State<AppStateProvider> {
     _orderSub?.cancel();
     _interestSub?.cancel();
     _purchaseRequestSub?.cancel();
+    _orderNotifSub?.cancel();
     _chatSub?.cancel();
     super.dispose();
   }

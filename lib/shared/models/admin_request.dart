@@ -17,6 +17,7 @@ class RequestedProduct {
 /// A customer product request in the admin dashboard.
 class AdminRequest {
   final String id;
+  final String customerId;
   final String customerName;
   final String phone;
   final List<RequestedProduct> products;
@@ -26,6 +27,7 @@ class AdminRequest {
 
   AdminRequest({
     required this.id,
+    required this.customerId,
     required this.customerName,
     required this.phone,
     required this.products,

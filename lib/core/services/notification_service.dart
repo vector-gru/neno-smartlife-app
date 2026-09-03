@@ -176,6 +176,46 @@ class NotificationService {
     );
   }
 
+  /// Displays a notification when the admin confirms or starts a discussion
+  /// on a customer's purchase request.
+  Future<void> showOrderStatusNotification({
+    required String productName,
+    required String status, // 'confirmed' | 'inDiscussion'
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      _kChannelId,
+      _kChannelName,
+      channelDescription: _kChannelDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final isConfirmed = status == 'confirmed';
+    final title = isConfirmed
+        ? '✅ Request Confirmed — $productName'
+        : '💬 In Discussion — $productName';
+    final body = isConfirmed
+        ? 'Your purchase request has been confirmed!'
+        : 'Your request is now in discussion with our team.';
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000 & 0x7FFFFFFF,
+      title,
+      body,
+      details,
+    );
+  }
+
   /// Displays a notification for a new message from admin in a chat thread.
   Future<void> showChatNotification({
     required String senderName,

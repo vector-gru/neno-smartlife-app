@@ -22,6 +22,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../shared/models/admin_request.dart';
 import '../../shared/models/cart_item.dart';
+import 'order_notification_service.dart';
 
 class PurchaseRequestService {
   PurchaseRequestService._();
@@ -165,7 +166,8 @@ class PurchaseRequestService {
 
       // 2. Mirror the status to the linked orders document.
       final snap = await reqRef.get();
-      final orderId = snap.data()?['orderId'] as String?;
+      final data = snap.data() ?? {};
+      final orderId = data['orderId'] as String?;
       // ignore: avoid_print
       print('[PurchaseRequestService] linked orderId: $orderId');
 
@@ -184,6 +186,29 @@ class PurchaseRequestService {
         // ignore: avoid_print
         print(
             '[PurchaseRequestService] no orderId on request — order not synced');
+      }
+
+      // 3. Notify the customer for confirmed and inDiscussion only.
+      if (status == CustomerRequestStatus.confirmed ||
+          status == CustomerRequestStatus.inDiscussion) {
+        final customerId = data['customerId'] as String? ?? '';
+        final customerPhone = data['customerPhone'] as String? ?? '';
+        final rawProducts = (data['products'] as List<dynamic>?) ?? [];
+        final firstProductName = rawProducts.isNotEmpty
+            ? ((rawProducts.first as Map<String, dynamic>)['name'] as String? ??
+                'your item')
+            : 'your item';
+
+        await OrderNotificationService.instance.notifyCustomer(
+          customerId: customerId,
+          customerPhone: customerPhone,
+          requestId: requestId,
+          productName: firstProductName,
+          status: _statusToString(status),
+        );
+        // ignore: avoid_print
+        print(
+            '[PurchaseRequestService] customer notified → ${_statusToString(status)}');
       }
     } catch (e) {
       // ignore: avoid_print
@@ -223,6 +248,7 @@ class PurchaseRequestService {
 
       return AdminRequest(
         id: doc.id,
+        customerId: d['customerId'] as String? ?? '',
         customerName: d['customerName'] as String? ?? 'Unknown',
         phone: d['customerPhone'] as String? ?? '',
         products: products,

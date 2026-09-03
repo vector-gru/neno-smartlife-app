@@ -4,16 +4,46 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
+import '../../core/services/order_notification_service.dart';
 import '../../core/state/app_state.dart';
 import '../../routes/app_router.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CustomerNotificationsScreen
 //
-// Shows all of the customer's chat threads as notification-style cards.
-// Threads with unread messages from admin are highlighted. Tapping opens
-// the chat. This screen is reached from the bell icon in the home app bar.
+// Unified feed showing both order status notifications (confirmed / in
+// discussion) and chat thread updates from the admin, merged and sorted
+// newest-first. Each type has its own card design.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── Unified entry ─────────────────────────────────────────────────────────────
+
+enum _EntryType { orderStatus, chat }
+
+class _Entry {
+  final _EntryType type;
+  final DateTime time;
+  final OrderNotification? orderNotif;
+  final ChatThread? chatThread;
+
+  _Entry.orderStatus(OrderNotification n)
+      : type = _EntryType.orderStatus,
+        time = n.createdAt,
+        orderNotif = n,
+        chatThread = null;
+
+  _Entry.chat(ChatThread t)
+      : type = _EntryType.chat,
+        time = t.lastMessageAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+        orderNotif = null,
+        chatThread = t;
+
+  bool get isUnread => type == _EntryType.orderStatus
+      ? !(orderNotif!.seenByCustomer)
+      : (chatThread!.customerUnread > 0);
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 class CustomerNotificationsScreen extends StatelessWidget {
   const CustomerNotificationsScreen({super.key});
@@ -25,45 +55,69 @@ class CustomerNotificationsScreen extends StatelessWidget {
     final customerId = state.customerIdentity?.uid ?? '';
     final customerPhone = state.customerIdentity?.phone ?? '';
     final customerName = state.customerIdentity?.fullName ?? '';
-
     final hasPhone = customerPhone.isNotEmpty;
+
+    if (!hasPhone && customerId.isEmpty) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F8F8),
+        appBar: _buildAppBar(context),
+        body: _buildNoIdentity(),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
       appBar: _buildAppBar(context),
-      body: (!hasPhone && customerId.isEmpty)
-          ? _buildNoIdentity()
-          : StreamBuilder<List<ChatThread>>(
-              stream: hasPhone
-                  ? ChatService.instance
-                      .watchCustomerThreadsByPhone(customerPhone)
-                  : ChatService.instance.watchCustomerThreads(customerId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                      strokeWidth: 2.5,
-                    ),
-                  );
-                }
+      body: StreamBuilder<List<OrderNotification>>(
+        stream: hasPhone
+            ? OrderNotificationService.instance.watchByPhone(customerPhone)
+            : OrderNotificationService.instance.watchByUid(customerId),
+        builder: (context, orderSnap) {
+          return StreamBuilder<List<ChatThread>>(
+            stream: hasPhone
+                ? ChatService.instance
+                    .watchCustomerThreadsByPhone(customerPhone)
+                : ChatService.instance.watchCustomerThreads(customerId),
+            builder: (context, chatSnap) {
+              final bothWaiting =
+                  orderSnap.connectionState == ConnectionState.waiting &&
+                      chatSnap.connectionState == ConnectionState.waiting;
 
-                final threads = snapshot.data ?? [];
+              if (bothWaiting) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                    strokeWidth: 2.5,
+                  ),
+                );
+              }
 
-                if (threads.isEmpty) {
-                  return _buildEmpty();
-                }
+              final entries = <_Entry>[
+                for (final n in orderSnap.data ?? []) _Entry.orderStatus(n),
+                for (final t in chatSnap.data ?? []) _Entry.chat(t),
+              ]..sort((a, b) => b.time.compareTo(a.time));
 
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  itemCount: threads.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    final thread = threads[i];
+              if (entries.isEmpty) return _buildEmpty();
+
+              return ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                itemCount: entries.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, i) {
+                  final e = entries[i];
+                  if (e.type == _EntryType.orderStatus) {
+                    return _OrderStatusCard(
+                      entry: e,
+                      onTap: () {
+                        OrderNotificationService.instance
+                            .markSeen(e.orderNotif!.id);
+                      },
+                    );
+                  } else {
+                    final thread = e.chatThread!;
                     return _ChatNotifCard(
                       thread: thread,
                       onTap: () {
-                        // Mark customer messages as read when opening
                         ChatService.instance.markCustomerRead(thread.id);
                         AppRouter.goToChat(
                           context,
@@ -76,12 +130,17 @@ class CustomerNotificationsScreen extends StatelessWidget {
                         );
                       },
                     );
-                  },
-                );
-              },
-            ),
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
     );
   }
+
+  // ── App bar ────────────────────────────────────────────────────────────────
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
@@ -107,7 +166,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
             ),
           ),
           Text(
-            'Messages from Neno SmartLife',
+            'Updates from Neno SmartLife',
             style: GoogleFonts.poppins(
               fontSize: 11,
               color: AppColors.textMuted,
@@ -118,6 +177,8 @@ class CustomerNotificationsScreen extends StatelessWidget {
       toolbarHeight: 62,
     );
   }
+
+  // ── Empty state ────────────────────────────────────────────────────────────
 
   Widget _buildEmpty() {
     return Center(
@@ -150,7 +211,7 @@ class CustomerNotificationsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'When Neno SmartLife replies to your interest,\nyou\'ll see it here.',
+              'Order updates and messages from\nNeno SmartLife will appear here.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13,
@@ -200,7 +261,141 @@ class CustomerNotificationsScreen extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Chat notification card
+// Order status notification card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OrderStatusCard extends StatelessWidget {
+  final _Entry entry;
+  final VoidCallback onTap;
+
+  const _OrderStatusCard({required this.entry, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final n = entry.orderNotif!;
+    final isUnread = entry.isUnread;
+    final isConfirmed = n.isConfirmed;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isUnread ? const Color(0xFFFAFFE8) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: isUnread
+              ? Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.35), width: 1)
+              : null,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x09000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Unread dot
+              Padding(
+                padding: const EdgeInsets.only(top: 5, right: 10),
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: isUnread ? AppColors.primary : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: isUnread
+                        ? null
+                        : Border.all(color: AppColors.border, width: 1.5),
+                  ),
+                ),
+              ),
+
+              // Icon
+              Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  color: isConfirmed
+                      ? const Color(0xFFE8F5E9)
+                      : const Color(0xFFE3F2FD),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isConfirmed
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.chat_bubble_outline_rounded,
+                  size: 20,
+                  color: isConfirmed
+                      ? const Color(0xFF2E7D32)
+                      : const Color(0xFF1565C0),
+                ),
+              ),
+
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            n.statusLabel,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight:
+                                  isUnread ? FontWeight.w700 : FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          n.timeAgo,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: isUnread
+                                ? AppColors.primaryDark
+                                : AppColors.textMuted,
+                            fontWeight:
+                                isUnread ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      n.bodyText,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isUnread
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
+                        fontWeight:
+                            isUnread ? FontWeight.w500 : FontWeight.w400,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat notification card (unchanged design, lifted from original)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ChatNotifCard extends StatelessWidget {
@@ -306,7 +501,6 @@ class _ChatNotifCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
 
-                    // Last message preview
                     if (thread.lastMessage.isNotEmpty)
                       Text(
                         thread.lastMessage,
@@ -326,7 +520,7 @@ class _ChatNotifCard extends StatelessWidget {
                 ),
               ),
 
-              // Unread count badge
+              // Unread badge
               if (hasUnread) ...[
                 const SizedBox(width: 10),
                 Container(

@@ -18,6 +18,7 @@ import '../../shared/widgets/stock_chip.dart';
 import '../../features/categories/categories_screen.dart';
 import '../../features/auth/customer_identity_sheet.dart';
 import '../../core/services/chat_service.dart';
+import '../../core/services/order_notification_service.dart';
 import '../../routes/app_router.dart';
 
 // ─── Promo banner data model ───────────────────────────────────────────────────
@@ -321,51 +322,62 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
-        // Notification bell for customer — shows unread chat count
+        // Notification bell for customer — sums chat unread + order status unread
         StreamBuilder<int>(
-          stream: context.appState.customerIdentity != null
-              ? (context.appState.customerIdentity!.phone.isNotEmpty
-                  ? ChatService.instance.watchCustomerUnreadCountByPhone(
-                      context.appState.customerIdentity!.phone)
-                  : ChatService.instance.watchCustomerUnreadCount(
-                      context.appState.customerIdentity!.uid))
-              : const Stream.empty(),
+          stream: context.appState.customerIdentity?.phone.isNotEmpty == true
+              ? ChatService.instance.watchCustomerUnreadCountByPhone(
+                  context.appState.customerIdentity!.phone)
+              : context.appState.customerIdentity != null
+                  ? ChatService.instance.watchCustomerUnreadCount(
+                      context.appState.customerIdentity!.uid)
+                  : const Stream.empty(),
           initialData: 0,
-          builder: (context, snap) {
-            final unread = snap.data ?? 0;
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  tooltip: 'Messages',
-                  icon: const Icon(Icons.notifications_outlined,
-                      color: AppColors.textPrimary, size: 22),
-                  onPressed: () => AppRouter.goToCustomerNotifications(context),
-                ),
-                if (unread > 0)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          unread > 9 ? '9+' : '$unread',
-                          style: GoogleFonts.poppins(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+          builder: (context, chatSnap) {
+            return StreamBuilder<int>(
+              stream:
+                  context.appState.customerIdentity?.phone.isNotEmpty == true
+                      ? OrderNotificationService.instance.watchUnreadCount(
+                          context.appState.customerIdentity!.phone)
+                      : const Stream.empty(),
+              initialData: 0,
+              builder: (context, orderSnap) {
+                final unread = (chatSnap.data ?? 0) + (orderSnap.data ?? 0);
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      tooltip: 'Messages',
+                      icon: const Icon(Icons.notifications_outlined,
+                          color: AppColors.textPrimary, size: 22),
+                      onPressed: () =>
+                          AppRouter.goToCustomerNotifications(context),
+                    ),
+                    if (unread > 0)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              unread > 9 ? '9+' : '$unread',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                );
+              },
             );
           },
         ),
