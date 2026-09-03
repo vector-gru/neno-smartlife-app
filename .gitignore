@@ -44,5 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Signing secrets — never commit these
+android/key.properties
+*.jks
+*.keystore
+
 # iOS build output (contains SPM checkouts with nested git repos)
 ios/build/
