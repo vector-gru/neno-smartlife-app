@@ -68,6 +68,69 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
     _service.updateStatus(id, CustomerRequestStatus.confirmed);
   }
 
+  /// Called when admin taps "Confirm & Close" on an inDiscussion card.
+  /// Shows a warning that the chat thread will be deleted, then confirms
+  /// and wipes the thread if the admin proceeds.
+  void _confirmAndClose(String id) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Confirm & close request?',
+          style: GoogleFonts.poppins(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          'This will mark the request as confirmed and permanently delete '
+          'the entire message thread with this customer.\n\n'
+          'The chat history cannot be recovered. Do you want to proceed?',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            height: 1.55,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              // 1. Optimistic local update
+              setState(() {
+                _requests.firstWhere((r) => r.id == id).status =
+                    CustomerRequestStatus.confirmed;
+              });
+              // 2. Update status in Firestore (also notifies customer)
+              await _service.updateStatus(id, CustomerRequestStatus.confirmed);
+              // 3. Delete the chat thread and all its messages
+              await ChatService.instance.deleteThread(id);
+            },
+            child: Text(
+              'Confirm & Close',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _reject(String id) {
     setState(() {
       _requests.firstWhere((r) => r.id == id).status =
@@ -216,7 +279,9 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
                       padding: const EdgeInsets.only(bottom: 14),
                       child: _RequestCard(
                         request: requests[i],
-                        onConfirm: () => _confirm(requests[i].id),
+                        onConfirm: () => requests[i].isInDiscussion
+                            ? _confirmAndClose(requests[i].id)
+                            : _confirm(requests[i].id),
                         onReject: () => _reject(requests[i].id),
                         onDiscuss: () => _startDiscussion(requests[i].id),
                       ),
@@ -530,17 +595,25 @@ class _ActionRow extends StatelessWidget {
             child: Container(
               height: 42,
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.primary, width: 1.5),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(10),
               ),
               alignment: Alignment.center,
-              child: Text(
-                'Update Quote',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_outline_rounded,
+                      color: AppColors.background, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Confirm & Close',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.background,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -548,8 +621,8 @@ class _ActionRow extends StatelessWidget {
         const SizedBox(width: 8),
         _IconBtn(
           icon: Icons.chat_bubble_outline_rounded,
-          color: AppColors.textOnPrimary,
-          bgColor: AppColors.primary,
+          color: AppColors.primary,
+          bgColor: AppColors.primary.withValues(alpha: 0.12),
           onTap: onDiscuss,
         ),
       ],

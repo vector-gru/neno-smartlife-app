@@ -37,6 +37,7 @@ class ChatMessage {
   final String senderName;
   final DateTime createdAt;
   final bool isRead;
+  final String type; // '' | 'momo' | 'thankyou'
 
   const ChatMessage({
     required this.id,
@@ -45,9 +46,12 @@ class ChatMessage {
     required this.senderName,
     required this.createdAt,
     this.isRead = false,
+    this.type = '',
   });
 
   bool get isAdmin => senderId == 'admin';
+  bool get isMomo => type == 'momo';
+  bool get isThankyou => type == 'thankyou';
 
   factory ChatMessage.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -59,6 +63,7 @@ class ChatMessage {
       senderName: d['senderName'] as String? ?? '',
       createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isRead: d['isRead'] as bool? ?? false,
+      type: d['type'] as String? ?? '',
     );
   }
 }
@@ -146,6 +151,7 @@ class ChatService {
     required String senderId, // 'admin' or customer UID
     required String senderName,
     required String text,
+    String type = '',
   }) async {
     final batch = _db.batch();
 
@@ -159,6 +165,7 @@ class ChatService {
       'senderName': senderName,
       'createdAt': FieldValue.serverTimestamp(),
       'isRead': false,
+      if (type.isNotEmpty) 'type': type,
     });
 
     // Update thread summary + bump the *other* party's unread counter
@@ -293,6 +300,25 @@ class ChatService {
     final snap =
         await _db.collection(_chats).where('customerId', isEqualTo: uid).get();
     await _deleteThreadDocs(snap.docs);
+  }
+
+  /// Deletes a single chat thread and all its messages by document ID.
+  Future<void> deleteThread(String chatId) async {
+    final threadRef = _db.collection(_chats).doc(chatId);
+    // Delete messages subcollection first (Firestore doesn't cascade)
+    final msgSnap = await threadRef.collection(_messages).get();
+    if (msgSnap.docs.isNotEmpty) {
+      const batchSize = 499;
+      for (var i = 0; i < msgSnap.docs.length; i += batchSize) {
+        final chunk = msgSnap.docs.skip(i).take(batchSize);
+        final batch = _db.batch();
+        for (final msg in chunk) {
+          batch.delete(msg.reference);
+        }
+        await batch.commit();
+      }
+    }
+    await threadRef.delete();
   }
 
   /// For each thread doc: delete messages subcollection first, then the thread.
