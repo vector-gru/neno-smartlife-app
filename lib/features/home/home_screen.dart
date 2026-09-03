@@ -972,12 +972,21 @@ class _ProductCardState extends State<_ProductCard> {
                         child: SizedBox(
                           height: 42,
                           child: ElevatedButton(
-                            onPressed: () {
-                              state.addToCart(p);
+                            onPressed: () async {
+                              if (!state.hasIdentity) {
+                                final saved =
+                                    await CustomerIdentitySheet.show(context);
+                                if (!saved) return;
+                              }
+                              await state.recordInterest(
+                                productId: p.id,
+                                productName: p.name,
+                              );
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Added to cart!',
+                                    'Your interest has been noted — we\'ll reach out shortly!',
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.w500,
                                       color: Colors.white,
@@ -989,7 +998,7 @@ class _ProductCardState extends State<_ProductCard> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   margin: const EdgeInsets.all(16),
-                                  duration: const Duration(seconds: 2),
+                                  duration: const Duration(seconds: 3),
                                 ),
                               );
                             },

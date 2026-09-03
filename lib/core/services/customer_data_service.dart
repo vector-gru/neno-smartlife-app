@@ -138,4 +138,31 @@ class CustomerDataService {
                 ))
             .toList());
   }
+
+  // ── Admin FCM token ────────────────────────────────────────────────────────
+
+  /// Stores the admin's FCM token in `config/admin_device` so any device
+  /// running as admin can look it up.
+  Future<void> saveAdminFcmToken(String adminUid, String token) async {
+    await _db.collection('config').doc('admin_device').set(
+      {
+        'fcmToken': token,
+        'adminUid': adminUid,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Clears the FCM token on logout so the device stops receiving notifications.
+  Future<void> clearAdminFcmToken(String adminUid) async {
+    await _db.collection('config').doc('admin_device').set(
+      {
+        'fcmToken': null,
+        'adminUid': adminUid,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
 }

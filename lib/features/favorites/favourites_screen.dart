@@ -544,11 +544,16 @@ class _FavCTA extends StatelessWidget {
     );
   }
 
-  void _showInterestedSnack(BuildContext context) {
+  void _showInterestedSnack(BuildContext context) async {
+    await context.appState.recordInterest(
+      productId: product.id,
+      productName: product.name,
+    );
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Added to cart — we\'ll follow up with you!',
+          'Your interest has been noted — we\'ll reach out shortly!',
           style: GoogleFonts.poppins(
               fontWeight: FontWeight.w500, color: Colors.white),
         ),
@@ -556,10 +561,9 @@ class _FavCTA extends StatelessWidget {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
       ),
     );
-    context.appState.addToCart(product);
   }
 
   void _showNotifySnack(BuildContext context) {

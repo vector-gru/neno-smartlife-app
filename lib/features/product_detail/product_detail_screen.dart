@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/state/app_state.dart';
 import '../../features/auth/customer_identity_sheet.dart';
+import '../../routes/app_router.dart';
 import '../../shared/models/product.dart';
 import '../../shared/widgets/condition_badge.dart';
 import '../../shared/widgets/product_badge.dart';
@@ -28,6 +29,48 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.initState();
     _selectedColor = widget.product.selectedColor;
     _startZoomHintTimer();
+  }
+
+  Future<void> _handleInterestedTap() async {
+    final state = context.appState;
+    if (!state.hasIdentity) {
+      final saved = await CustomerIdentitySheet.show(context);
+      if (!saved) return;
+    }
+    await state.recordInterest(
+      productId: widget.product.id,
+      productName: widget.product.name,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Your interest has been noted — we\'ll reach out shortly!',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: AppColors.primaryDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _handleAddToCartTap() async {
+    final state = context.appState;
+    if (!state.hasIdentity) {
+      final saved = await CustomerIdentitySheet.show(context);
+      if (!saved) return;
+    }
+    state.addToCart(widget.product, variant: _selectedColor);
+    if (!mounted) return;
+    AppRouter.goToCart(context);
   }
 
   Future<void> _handleFavouriteTap() async {
@@ -576,7 +619,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: SizedBox(
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: _handleInterestedTap,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.background,
@@ -602,7 +645,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: SizedBox(
               height: 50,
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: _handleAddToCartTap,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textPrimary,
                   side: const BorderSide(color: Color(0xFFDDDDDD), width: 1.5),

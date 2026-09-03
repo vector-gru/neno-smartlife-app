@@ -10,6 +10,8 @@ import '../auth/auth_models.dart';
 import '../auth/auth_service.dart';
 import '../services/category_service.dart';
 import '../services/customer_data_service.dart';
+import '../services/interest_request_service.dart';
+import '../services/notification_service.dart';
 import '../services/product_service.dart';
 import '../../shared/models/admin_category.dart';
 import '../../shared/models/cart_item.dart';
@@ -38,12 +40,15 @@ class AppStateProviderState extends State<AppStateProvider> {
   final _productService = ProductService.instance;
   final _categoryService = CategoryService.instance;
   final _customerDataService = CustomerDataService.instance;
+  final _notificationService = NotificationService.instance;
+  final _interestService = InterestRequestService.instance;
 
   // ── Subscriptions ──────────────────────────────────────────────────────────
   StreamSubscription<User?>? _authSub;
   StreamSubscription<List<Product>>? _productSub;
   StreamSubscription<List<AdminCategory>>? _categorySub;
   StreamSubscription<List<AppOrder>>? _orderSub;
+  StreamSubscription<List<InterestRequest>>? _interestSub;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   AuthStatus _authStatus = AuthStatus.loading;
@@ -289,6 +294,75 @@ class AppStateProviderState extends State<AppStateProvider> {
     // _onAuthStateChanged fires → sets state to unauthenticated
   }
 
+  // ── Interest requests ──────────────────────────────────────────────────────
+
+  /// Called by the "I'm Interested" button. Writes an interest_request
+  /// document to Firestore, which the admin device picks up via
+  /// [_subscribeToInterestRequests] and turns into a local push notification.
+  Future<void> recordInterest({
+    required String productId,
+    required String productName,
+  }) async {
+    // Ensure we have an anonymous session first.
+    final user = await _authService.ensureAnonymousSession();
+    await _interestService.recordInterest(
+      customerId: user.uid,
+      customerName: _customerIdentity?.fullName ?? 'Unknown',
+      customerPhone: _customerIdentity?.phone ?? '',
+      productId: productId,
+      productName: productName,
+    );
+  }
+
+  // ── Admin: FCM token management ────────────────────────────────────────────
+
+  /// Fetches this device's FCM token and stores it in
+  /// `config/admin_device` so it survives app restarts and is accessible
+  /// even when the admin is offline.
+  Future<void> _saveAdminFcmToken(String adminUid) async {
+    final token = await _notificationService.getToken();
+    if (token == null) return;
+    try {
+      await _customerDataService.saveAdminFcmToken(adminUid, token);
+    } catch (_) {}
+
+    // Refresh token when FCM rotates it.
+    _notificationService.onTokenRefresh.listen((newToken) async {
+      if (!mounted) return;
+      try {
+        await _customerDataService.saveAdminFcmToken(adminUid, newToken);
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _clearAdminFcmToken(String adminUid) async {
+    try {
+      await _customerDataService.clearAdminFcmToken(adminUid);
+    } catch (_) {}
+  }
+
+  // ── Admin: interest request listener ──────────────────────────────────────
+
+  /// Subscribes to new interest_requests from Firestore.
+  /// Each newly added document triggers a local push notification.
+  void _subscribeToInterestRequests() {
+    _interestSub?.cancel();
+    _interestSub = _interestService.watchNewRequests().listen(
+      (requests) async {
+        for (final req in requests) {
+          await _notificationService.showInterestNotification(
+            customerName: req.customerName,
+            customerPhone: req.customerPhone,
+            productName: req.productName,
+          );
+          // Mark seen so it doesn't re-fire on next app launch.
+          _interestService.markSeen(req.id);
+        }
+      },
+      onError: (_) {},
+    );
+  }
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   @override
@@ -341,6 +415,10 @@ class AppStateProviderState extends State<AppStateProvider> {
         _authStatus = AuthStatus.admin;
         _customerIdentity = null;
       });
+      // Save this device's FCM token so interest notifications reach the admin.
+      _saveAdminFcmToken(user.uid);
+      // Start listening for new customer interest requests.
+      _subscribeToInterestRequests();
     } else {
       final identity = await _authService.fetchCustomerIdentity();
       if (!mounted) return;
@@ -380,6 +458,14 @@ class AppStateProviderState extends State<AppStateProvider> {
   }
 
   Future<void> signOut() async {
+    // If signing out as admin, clear the stored FCM token so stale devices
+    // don't receive notifications after logout.
+    if (_authService.isAdmin) {
+      final uid = _authService.currentUser?.uid;
+      if (uid != null) await _clearAdminFcmToken(uid);
+    }
+    _interestSub?.cancel();
+    _interestSub = null;
     await _authService.signOut();
   }
 
@@ -389,6 +475,7 @@ class AppStateProviderState extends State<AppStateProvider> {
     _productSub?.cancel();
     _categorySub?.cancel();
     _orderSub?.cancel();
+    _interestSub?.cancel();
     super.dispose();
   }
 
