@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import '../core/auth/auth_models.dart';
 import '../core/state/app_state.dart';
 import '../features/admin/admin_dashboard_screen.dart';
+import '../features/admin/admin_notifications_screen.dart';
 import '../features/auth/admin_login_screen.dart';
 import '../features/cart/cart_screen.dart';
+import '../features/chat/chat_screen.dart';
+import '../features/chat/customer_chats_screen.dart';
+import '../features/chat/customer_notifications_screen.dart';
 import '../features/favorites/favourites_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -23,6 +27,10 @@ class AppRouter {
   static const String orders = '/orders';
   static const String adminLogin = '/admin-login';
   static const String adminDashboard = '/admin';
+  static const String adminNotifications = '/admin/notifications';
+  static const String chat = '/chat';
+  static const String customerChats = '/chats';
+  static const String customerNotifications = '/notifications';
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
 
@@ -104,6 +112,64 @@ class AppRouter {
         ),
       );
     }
+  }
+
+  /// Navigate to admin notification / interest requests screen.
+  static void goToAdminNotifications(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AdminNotificationsScreen(),
+        settings: const RouteSettings(name: adminNotifications),
+      ),
+    );
+  }
+
+  /// Navigate to the chat screen.
+  /// [isAdmin] controls bubble alignment and unread tracking.
+  /// [senderId] should be 'admin' or the customer's anonymous UID.
+  /// [senderName] is the display name used on outgoing messages.
+  static void goToChat(
+    BuildContext context, {
+    required String chatId,
+    required String peerName,
+    required String productName,
+    required bool isAdmin,
+    String senderId = 'admin',
+    String senderName = 'Admin',
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          chatId: chatId,
+          senderId: senderId,
+          senderName: senderName,
+          peerName: peerName,
+          productName: productName,
+          isAdmin: isAdmin,
+        ),
+        settings: const RouteSettings(name: chat),
+      ),
+    );
+  }
+
+  /// Navigate to the customer's chat threads list.
+  static void goToCustomerChats(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const CustomerChatsScreen(),
+        settings: const RouteSettings(name: customerChats),
+      ),
+    );
+  }
+
+  /// Navigate to the customer notifications screen (admin chat messages).
+  static void goToCustomerNotifications(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const CustomerNotificationsScreen(),
+        settings: const RouteSettings(name: customerNotifications),
+      ),
+    );
   }
 
   // ── Named route generator ──────────────────────────────────────────────────

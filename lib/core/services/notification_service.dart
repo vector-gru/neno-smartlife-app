@@ -136,4 +136,36 @@ class NotificationService {
       details,
     );
   }
+
+  /// Displays a notification for a new message from admin in a chat thread.
+  Future<void> showChatNotification({
+    required String senderName,
+    required String productName,
+    required String preview,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      _kChannelId,
+      _kChannelName,
+      channelDescription: _kChannelDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000 & 0x7FFFFFFF,
+      '💬 $senderName — $productName',
+      preview.isNotEmpty ? preview : 'New message',
+      details,
+    );
+  }
 }

@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/interest_request_service.dart';
 import '../../core/state/app_state.dart';
+import '../../routes/app_router.dart';
 import '../../shared/models/admin_request.dart';
 import 'admin_manage_categories_screen.dart';
 import 'admin_products_screen.dart';
@@ -67,6 +69,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onDismiss: _dismiss,
             onBackToStore: () => Navigator.of(context).pop(),
             onViewAll: () => setState(() => _navIndex = 1),
+            onOpenNotifications: () =>
+                AppRouter.goToAdminNotifications(context),
           ),
           const _RequestsTab(),
           const AdminProductsScreen(),
@@ -139,6 +143,7 @@ class _OverviewTab extends StatelessWidget {
   final void Function(String) onDismiss;
   final VoidCallback onBackToStore;
   final VoidCallback onViewAll;
+  final VoidCallback onOpenNotifications;
 
   const _OverviewTab({
     required this.requests,
@@ -148,6 +153,7 @@ class _OverviewTab extends StatelessWidget {
     required this.onDismiss,
     required this.onBackToStore,
     required this.onViewAll,
+    required this.onOpenNotifications,
   });
 
   @override
@@ -194,6 +200,49 @@ class _OverviewTab extends StatelessWidget {
             ),
           ),
           actions: [
+            // Notification bell — StreamBuilder gives it its own rebuild cycle
+            // so the badge updates even when other parts of the tree don't.
+            StreamBuilder<int>(
+              stream: InterestRequestService.instance.watchUnreadCount(),
+              initialData: 0,
+              builder: (context, snap) {
+                final count = snap.data ?? 0;
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      tooltip: 'Interest Requests',
+                      icon: const Icon(Icons.notifications_outlined,
+                          color: AppColors.textPrimary, size: 22),
+                      onPressed: onOpenNotifications,
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          width: 17,
+                          height: 17,
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              count > 99 ? '99+' : '$count',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
             // Back to customer store
             IconButton(
               tooltip: 'Back to Store',

@@ -21,7 +21,15 @@ class CustomerIdentitySheet extends StatefulWidget {
   const CustomerIdentitySheet({super.key});
 
   /// Shows the sheet and returns true if the identity was successfully saved.
+  ///
+  /// If the current user is an admin the sheet is skipped entirely and `true`
+  /// is returned — the admin's identity is not managed through this flow, and
+  /// showing the sheet would risk triggering `signInAnonymously()` which
+  /// would overwrite the admin's Firebase Auth session.
   static Future<bool> show(BuildContext context) async {
+    // Short-circuit for admin — never show the customer identity sheet.
+    if (context.appState.isAdmin) return true;
+
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,

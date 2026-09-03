@@ -141,6 +141,18 @@ class CustomerDataService {
 
   // ── Admin FCM token ────────────────────────────────────────────────────────
 
+  /// Stores the customer's FCM token in their Firestore document so the
+  /// admin-side chat listener can trigger a local notification when needed.
+  Future<void> saveCustomerFcmToken(String uid, String token) async {
+    await _db.collection('customers').doc(uid).set(
+      {
+        'fcmToken': token,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
   /// Stores the admin's FCM token in `config/admin_device` so any device
   /// running as admin can look it up.
   Future<void> saveAdminFcmToken(String adminUid, String token) async {

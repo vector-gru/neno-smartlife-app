@@ -1,18 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // InterestRequestService
 //
-// Two responsibilities:
-//
-//   CUSTOMER SIDE
-//     recordInterest() — writes a document to `interest_requests` when a
-//     customer taps "I'm Interested". The document carries customer name,
-//     phone, product ID and product name.
-//
-//   ADMIN SIDE
-//     watchNewRequests() — returns a stream of new (unseen) interest request
-//     documents. AppStateProvider subscribes when the admin is logged in;
-//     each emission triggers a local push notification via NotificationService.
-//
 // Firestore schema  (collection: interest_requests)
 // ┌─────────────────────────────────────────────────┐
 // │  customerId   : String   (anonymous UID)         │
@@ -35,6 +23,7 @@ class InterestRequest {
   final String productId;
   final String productName;
   final DateTime createdAt;
+  final bool seenByAdmin;
 
   const InterestRequest({
     required this.id,
@@ -44,6 +33,7 @@ class InterestRequest {
     required this.productId,
     required this.productName,
     required this.createdAt,
+    this.seenByAdmin = false,
   });
 
   factory InterestRequest.fromFirestore(
@@ -57,7 +47,19 @@ class InterestRequest {
       productId: d['productId'] as String? ?? '',
       productName: d['productName'] as String? ?? '',
       createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      seenByAdmin: d['seenByAdmin'] as bool? ?? false,
     );
+  }
+
+  /// Relative time label, e.g. "2 min ago", "3 hr ago", "Yesterday".
+  String get timeAgo {
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    return '${(diff.inDays / 7).floor()} wk ago';
   }
 }
 
@@ -71,8 +73,7 @@ class InterestRequestService {
   // ── Customer: record interest ──────────────────────────────────────────────
 
   /// Writes a new interest_request document to Firestore.
-  /// Silently ignores errors so a Firestore hiccup never blocks the UI.
-  Future<void> recordInterest({
+  Future<String?> recordInterest({
     required String customerId,
     required String customerName,
     required String customerPhone,
@@ -80,7 +81,7 @@ class InterestRequestService {
     required String productName,
   }) async {
     try {
-      await _db.collection(_collection).add({
+      final ref = await _db.collection(_collection).add({
         'customerId': customerId,
         'customerName': customerName,
         'customerPhone': customerPhone,
@@ -89,20 +90,42 @@ class InterestRequestService {
         'createdAt': FieldValue.serverTimestamp(),
         'seenByAdmin': false,
       });
+      return ref.id;
     } catch (_) {
-      // Non-fatal — notification is best-effort.
+      return null;
     }
   }
 
-  // ── Admin: watch for new requests ──────────────────────────────────────────
+  // ── Admin: full live list ──────────────────────────────────────────────────
 
-  /// Returns a stream that emits a list of *newly added* [InterestRequest]
-  /// documents — i.e. only `DocumentChangeType.added` events after the
-  /// listener is set up.
-  ///
-  /// We filter `seenByAdmin == false` and order by `createdAt` descending so
-  /// the most recent items come first. Only documents from the last 30 days
-  /// are considered to avoid re-firing old events on first listen.
+  /// All interest requests from the past 90 days, newest first.
+  /// Used by the notification screen to render the full list.
+  Stream<List<InterestRequest>> watchAllRequests() {
+    final cutoff = Timestamp.fromDate(
+      DateTime.now().subtract(const Duration(days: 90)),
+    );
+    return _db
+        .collection(_collection)
+        .where('createdAt', isGreaterThan: cutoff)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map(InterestRequest.fromFirestore).toList());
+  }
+
+  /// Stream of the current unread count (seenByAdmin == false).
+  /// Lightweight — used for the badge on the notification bell.
+  Stream<int> watchUnreadCount() {
+    return _db
+        .collection(_collection)
+        .where('seenByAdmin', isEqualTo: false)
+        .snapshots()
+        .map((snap) => snap.size);
+  }
+
+  // ── Admin: delta stream for push notifications ────────────────────────────
+
+  /// Emits only *newly added* unseen requests — triggers local push
+  /// notification in AppStateProvider when the admin is logged in.
   Stream<List<InterestRequest>> watchNewRequests() {
     final cutoff = Timestamp.fromDate(
       DateTime.now().subtract(const Duration(days: 30)),
@@ -119,7 +142,9 @@ class InterestRequestService {
             .toList());
   }
 
-  /// Marks a request as seen so it doesn't re-notify on next app start.
+  // ── Admin: mutations ───────────────────────────────────────────────────────
+
+  /// Marks a request as read (seenByAdmin = true).
   Future<void> markSeen(String requestId) async {
     try {
       await _db
@@ -127,5 +152,10 @@ class InterestRequestService {
           .doc(requestId)
           .update({'seenByAdmin': true});
     } catch (_) {}
+  }
+
+  /// Permanently deletes an interest request document from Firestore.
+  Future<void> deleteRequest(String requestId) async {
+    await _db.collection(_collection).doc(requestId).delete();
   }
 }

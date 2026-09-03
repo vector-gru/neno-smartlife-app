@@ -33,6 +33,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _handleInterestedTap() async {
     final state = context.appState;
+    // Admin browsing the store — no-op (interest is a customer action)
+    if (state.isAdmin) return;
     if (!state.hasIdentity) {
       final saved = await CustomerIdentitySheet.show(context);
       if (!saved) return;
@@ -64,7 +66,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _handleAddToCartTap() async {
     final state = context.appState;
-    if (!state.hasIdentity) {
+    if (!state.isAdmin && !state.hasIdentity) {
       final saved = await CustomerIdentitySheet.show(context);
       if (!saved) return;
     }
@@ -80,8 +82,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       state.toggleFavourite(widget.product);
       return;
     }
-    // Adding: require identity first.
-    if (!state.hasIdentity) {
+    // Admin bypass — identity sheet must not appear for admin.
+    if (!state.isAdmin && !state.hasIdentity) {
       final saved = await CustomerIdentitySheet.show(context);
       if (!saved) return;
     }

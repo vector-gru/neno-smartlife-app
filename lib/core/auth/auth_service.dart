@@ -43,13 +43,40 @@ class AuthService {
     await _auth.signOut();
   }
 
+  /// After admin signs out, re-establish the customer's anonymous session.
+  /// If a previous anonymous UID is known we sign in anonymously (Firebase
+  /// will create a new anonymous user since you can't re-authenticate with
+  /// a plain anonymous account). The new UID is different from the old one,
+  /// but `authStateChanges` will fire and the app will load the customer
+  /// identity by phone number — so existing identity, favourites and orders
+  /// are reconnected via the cross-device phone-matching logic already in
+  /// [saveCustomerIdentity] and [watchOrdersByPhone].
+  Future<void> restoreAnonymousSession(String? previousUid) async {
+    if (previousUid == null) return;
+    if (_auth.currentUser != null) return;
+    final cred = await _auth.signInAnonymously();
+    // Force-refresh token so subsequent Firestore writes are authenticated.
+    await cred.user?.getIdToken(true);
+  }
+
   // ── Customer anonymous auth ────────────────────────────────────────────────
 
+  /// Returns the current anonymous user session, creating one if needed.
+  ///
+  /// IMPORTANT: if an admin (email/password) session is currently active this
+  /// method returns that user unchanged — it never calls signInAnonymously()
+  /// while an admin is signed in, which would overwrite the admin session.
   Future<User> ensureAnonymousSession() async {
     final user = _auth.currentUser;
+    // Already have a session (admin or existing anonymous) — reuse it.
     if (user != null) return user;
     final cred = await _auth.signInAnonymously();
-    return cred.user!;
+    final newUser = cred.user!;
+    // Force-refresh the ID token so Firestore security rules receive a valid
+    // auth token immediately on the first write. Without this, the token may
+    // not have propagated yet and rules that check request.auth.uid fail.
+    await newUser.getIdToken(true);
+    return newUser;
   }
 
   // ── Customer identity (Firestore) ──────────────────────────────────────────
@@ -107,16 +134,24 @@ class AuthService {
   }
 
   /// Looks up a customer document by phone number.
-  /// Returns null if no match found.
+  /// Returns null if no match found or if the query is denied (e.g. during
+  /// the brief window after anonymous sign-in before the token propagates).
   Future<CustomerIdentity?> findCustomerByPhone(String phone) async {
-    final snap = await _db
-        .collection(_customersCollection)
-        .where('phone', isEqualTo: phone.trim())
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    final doc = snap.docs.first;
-    return CustomerIdentity.fromMap(doc.id, doc.data());
+    try {
+      final snap = await _db
+          .collection(_customersCollection)
+          .where('phone', isEqualTo: phone.trim())
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) return null;
+      final doc = snap.docs.first;
+      return CustomerIdentity.fromMap(doc.id, doc.data());
+    } catch (_) {
+      // If the query is denied (e.g. token not yet propagated after fresh
+      // anonymous sign-in), treat it as "no existing customer found" and
+      // continue — the identity will be saved as a new document.
+      return null;
+    }
   }
 
   // ── Account deletion ───────────────────────────────────────────────────────

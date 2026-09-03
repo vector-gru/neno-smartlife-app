@@ -17,6 +17,7 @@ import '../../shared/widgets/product_badge.dart';
 import '../../shared/widgets/stock_chip.dart';
 import '../../features/categories/categories_screen.dart';
 import '../../features/auth/customer_identity_sheet.dart';
+import '../../core/services/chat_service.dart';
 import '../../routes/app_router.dart';
 
 // ─── Promo banner data model ───────────────────────────────────────────────────
@@ -319,6 +320,54 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
           ],
+        ),
+        // Notification bell for customer — shows unread chat count
+        StreamBuilder<int>(
+          stream: context.appState.customerIdentity != null
+              ? (context.appState.customerIdentity!.phone.isNotEmpty
+                  ? ChatService.instance.watchCustomerUnreadCountByPhone(
+                      context.appState.customerIdentity!.phone)
+                  : ChatService.instance.watchCustomerUnreadCount(
+                      context.appState.customerIdentity!.uid))
+              : const Stream.empty(),
+          initialData: 0,
+          builder: (context, snap) {
+            final unread = snap.data ?? 0;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  tooltip: 'Messages',
+                  icon: const Icon(Icons.notifications_outlined,
+                      color: AppColors.textPrimary, size: 22),
+                  onPressed: () => AppRouter.goToCustomerNotifications(context),
+                ),
+                if (unread > 0)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          unread > 9 ? '9+' : '$unread',
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         // Admin dashboard shortcut
         IconButton(
@@ -857,7 +906,8 @@ class _ProductCardState extends State<_ProductCard> {
                   child: GestureDetector(
                     onTap: () async {
                       // Require identity before saving a favourite.
-                      if (!state.hasIdentity) {
+                      // Admin bypass — no identity sheet for admin.
+                      if (!state.isAdmin && !state.hasIdentity) {
                         final saved = await CustomerIdentitySheet.show(context);
                         if (!saved) return;
                       }
@@ -973,6 +1023,8 @@ class _ProductCardState extends State<_ProductCard> {
                           height: 42,
                           child: ElevatedButton(
                             onPressed: () async {
+                              // Admin bypass — skip identity gate and interest recording
+                              if (state.isAdmin) return;
                               if (!state.hasIdentity) {
                                 final saved =
                                     await CustomerIdentitySheet.show(context);

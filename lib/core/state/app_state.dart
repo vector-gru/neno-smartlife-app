@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../auth/auth_models.dart';
 import '../auth/auth_service.dart';
 import '../services/category_service.dart';
+import '../services/chat_service.dart';
 import '../services/customer_data_service.dart';
 import '../services/interest_request_service.dart';
 import '../services/notification_service.dart';
@@ -49,6 +50,14 @@ class AppStateProviderState extends State<AppStateProvider> {
   StreamSubscription<List<AdminCategory>>? _categorySub;
   StreamSubscription<List<AppOrder>>? _orderSub;
   StreamSubscription<List<InterestRequest>>? _interestSub;
+  StreamSubscription? _chatSub;
+
+  // ── Session bridging ───────────────────────────────────────────────────────
+  // When admin logs in we snapshot the anonymous customer UID that was active
+  // so we can restore the customer session cleanly after admin logs out.
+  String? _preAdminAnonymousUid;
+  // Tracks the last UID that was active as a customer session.
+  String? _lastCustomerUid;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   AuthStatus _authStatus = AuthStatus.loading;
@@ -299,10 +308,16 @@ class AppStateProviderState extends State<AppStateProvider> {
   /// Called by the "I'm Interested" button. Writes an interest_request
   /// document to Firestore, which the admin device picks up via
   /// [_subscribeToInterestRequests] and turns into a local push notification.
+  ///
+  /// No-op when the admin is the current user — the admin browsing their
+  /// own store should not generate interest requests.
   Future<void> recordInterest({
     required String productId,
     required String productName,
   }) async {
+    // Never let an admin session generate an interest request — this would
+    // write to customers/{adminUid} and corrupt the admin Firestore document.
+    if (isAdmin) return;
     // Ensure we have an anonymous session first.
     final user = await _authService.ensureAnonymousSession();
     await _interestService.recordInterest(
@@ -326,9 +341,9 @@ class AppStateProviderState extends State<AppStateProvider> {
       await _customerDataService.saveAdminFcmToken(adminUid, token);
     } catch (_) {}
 
-    // Refresh token when FCM rotates it.
+    // Refresh token when FCM rotates it — only while still admin.
     _notificationService.onTokenRefresh.listen((newToken) async {
-      if (!mounted) return;
+      if (!mounted || !_authService.isAdmin) return;
       try {
         await _customerDataService.saveAdminFcmToken(adminUid, newToken);
       } catch (_) {}
@@ -345,22 +360,77 @@ class AppStateProviderState extends State<AppStateProvider> {
 
   /// Subscribes to new interest_requests from Firestore.
   /// Each newly added document triggers a local push notification.
+  // ── Admin: interest request listener ──────────────────────────────────────
+
+  // IDs we've already shown a push notification for this session.
+  // Prevents re-notifying when the stream re-emits on reconnect.
+  final Set<String> _notifiedRequestIds = {};
+
   void _subscribeToInterestRequests() {
     _interestSub?.cancel();
     _interestSub = _interestService.watchNewRequests().listen(
       (requests) async {
         for (final req in requests) {
+          // Skip if we already notified for this request in this session.
+          if (_notifiedRequestIds.contains(req.id)) continue;
+          _notifiedRequestIds.add(req.id);
+          // Show the local push notification.
           await _notificationService.showInterestNotification(
             customerName: req.customerName,
             customerPhone: req.customerPhone,
             productName: req.productName,
           );
-          // Mark seen so it doesn't re-fire on next app launch.
-          _interestService.markSeen(req.id);
+          // Do NOT mark seen here — leaving seenByAdmin=false keeps the
+          // badge count accurate until the admin opens the notification screen.
+          // markSeen() is called when the admin taps the card.
         }
       },
       onError: (_) {},
     );
+  }
+
+  // ── Customer: chat message notifications ──────────────────────────────────
+
+  /// Watches the customer's chat threads for new messages from admin.
+  /// Only fires a notification when a thread's customerUnread count *increases*
+  /// — not on first load or when the customer themselves sends a message.
+  final Map<String, int> _lastKnownCustomerUnread = {};
+  bool _chatSubInitialized = false;
+
+  void _subscribeToChatNotifications(String customerId) {
+    _chatSub?.cancel();
+    _chatSubInitialized = false;
+    _lastKnownCustomerUnread.clear();
+
+    // Watch by phone if we have identity — phone never drifts across sessions.
+    // Fall back to UID-based watch if phone isn't available yet.
+    final phone = _customerIdentity?.phone;
+    final stream = phone != null && phone.isNotEmpty
+        ? ChatService.instance.watchCustomerThreadsByPhone(phone)
+        : ChatService.instance.watchCustomerThreads(customerId);
+
+    _chatSub = stream.listen((threads) async {
+      // First emission: seed baseline counts, don't notify
+      if (!_chatSubInitialized) {
+        for (final t in threads) {
+          _lastKnownCustomerUnread[t.id] = t.customerUnread;
+        }
+        _chatSubInitialized = true;
+        return;
+      }
+
+      for (final thread in threads) {
+        final previous = _lastKnownCustomerUnread[thread.id] ?? 0;
+        if (thread.customerUnread > previous) {
+          await _notificationService.showChatNotification(
+            senderName: 'Neno SmartLife',
+            productName: thread.productName,
+            preview: thread.lastMessage,
+          );
+        }
+        _lastKnownCustomerUnread[thread.id] = thread.customerUnread;
+      }
+    }, onError: (_) {});
   }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -406,11 +476,18 @@ class AppStateProviderState extends State<AppStateProvider> {
       });
       _orderSub?.cancel();
       _orderSub = null;
+      _chatSub?.cancel();
+      _chatSub = null;
       await _customerDataService.clearCart();
       return;
     }
 
     if (_authService.isAdmin) {
+      // Snapshot the anonymous UID so we can restore the customer session
+      // after the admin logs out, without creating a brand-new anonymous user.
+      if (_lastCustomerUid != null) {
+        _preAdminAnonymousUid = _lastCustomerUid;
+      }
       setState(() {
         _authStatus = AuthStatus.admin;
         _customerIdentity = null;
@@ -422,6 +499,8 @@ class AppStateProviderState extends State<AppStateProvider> {
     } else {
       final identity = await _authService.fetchCustomerIdentity();
       if (!mounted) return;
+      // Remember this anonymous UID so we can restore it after admin logout.
+      _lastCustomerUid = user.uid;
       setState(() {
         _authStatus = AuthStatus.customer;
         _customerIdentity = identity;
@@ -431,9 +510,16 @@ class AppStateProviderState extends State<AppStateProvider> {
       if (identity != null) {
         // If we know the phone, subscribe by phone for cross-device order history
         _subscribeToOrdersByPhone(identity.phone);
+        // Refresh FCM token on every login so it stays current
+        final token = await _notificationService.getToken();
+        if (token != null && mounted) {
+          _customerDataService.saveCustomerFcmToken(user.uid, token);
+        }
       }
       await _loadFavourites();
       await _loadCart();
+      // Listen for admin messages and show local notifications
+      _subscribeToChatNotifications(user.uid);
     }
   }
 
@@ -455,6 +541,11 @@ class AppStateProviderState extends State<AppStateProvider> {
     // Start order subscription now that we have identity — use phone so
     // orders from previous devices are also visible.
     _subscribeToOrdersByPhone(identity.phone);
+    // Save this device's FCM token so admin messages can trigger notifications.
+    final token = await _notificationService.getToken();
+    if (token != null) {
+      await _customerDataService.saveCustomerFcmToken(identity.uid, token);
+    }
   }
 
   Future<void> signOut() async {
@@ -466,7 +557,15 @@ class AppStateProviderState extends State<AppStateProvider> {
     }
     _interestSub?.cancel();
     _interestSub = null;
+    _notifiedRequestIds.clear();
+    _chatSub?.cancel();
+    _chatSub = null;
     await _authService.signOut();
+    // After admin signs out Firebase Auth has no current user. Re-establish
+    // the anonymous customer session so the customer side of the app works
+    // without creating a brand-new UID each time.
+    await _authService.restoreAnonymousSession(_preAdminAnonymousUid);
+    _preAdminAnonymousUid = null;
   }
 
   @override
@@ -476,6 +575,7 @@ class AppStateProviderState extends State<AppStateProvider> {
     _categorySub?.cancel();
     _orderSub?.cancel();
     _interestSub?.cancel();
+    _chatSub?.cancel();
     super.dispose();
   }
 

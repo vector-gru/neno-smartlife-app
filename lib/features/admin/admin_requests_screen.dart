@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/services/chat_service.dart';
+import '../../routes/app_router.dart';
 import '../../shared/models/admin_request.dart';
 import '../../shared/widgets/app_search_bar.dart';
 import '../../shared/widgets/filter_chip_row.dart';
@@ -62,10 +64,29 @@ class _AdminRequestsScreenState extends State<AdminRequestsScreen> {
             CustomerRequestStatus.rejected;
       });
 
-  void _startDiscussion(String id) => setState(() {
-        _requests.firstWhere((r) => r.id == id).status =
-            CustomerRequestStatus.inDiscussion;
-      });
+  void _startDiscussion(String id) async {
+    setState(() {
+      _requests.firstWhere((r) => r.id == id).status =
+          CustomerRequestStatus.inDiscussion;
+    });
+    final req = _requests.firstWhere((r) => r.id == id);
+    await ChatService.instance.ensureThread(
+      chatId: req.id,
+      customerId: req.id, // AdminRequest has no separate customerId
+      customerName: req.customerName,
+      customerPhone: req.phone,
+      productName: req.productName,
+    );
+    if (mounted) {
+      AppRouter.goToChat(
+        context,
+        chatId: req.id,
+        peerName: req.customerName,
+        productName: req.productName,
+        isAdmin: true,
+      );
+    }
+  }
 
   @override
   void dispose() {

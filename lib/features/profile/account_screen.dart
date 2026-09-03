@@ -160,7 +160,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 iconBg: null,
                 title: l10n.accountContactAdmin,
                 titleColor: AppColors.primaryDark,
-                onTap: () => _showComingSoon(context, l10n),
+                onTap: () => AppRouter.goToCustomerChats(context),
               ),
             ],
           ),
