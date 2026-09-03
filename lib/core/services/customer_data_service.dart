@@ -183,4 +183,42 @@ class CustomerDataService {
       SetOptions(merge: true),
     );
   }
+
+  // ── Bulk deletion ──────────────────────────────────────────────────────────
+
+  /// Deletes every order document whose [customerPhone] matches [phone].
+  /// Uses batched writes (max 500 per batch) to stay within Firestore limits.
+  Future<void> deleteOrdersByPhone(String phone) async {
+    final snap = await _db
+        .collection('orders')
+        .where('customerPhone', isEqualTo: phone)
+        .get();
+    await _deleteDocs(snap.docs);
+  }
+
+  /// Deletes every order document whose [customerId] matches [uid].
+  /// Covers orders written before the customer set a phone number.
+  Future<void> deleteOrdersByUid(String uid) async {
+    final snap = await _db
+        .collection('orders')
+        .where('customerId', isEqualTo: uid)
+        .get();
+    await _deleteDocs(snap.docs);
+  }
+
+  /// Deletes every document in [docs] using Firestore batched writes.
+  /// Firestore limits each batch to 500 operations.
+  Future<void> _deleteDocs(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
+    if (docs.isEmpty) return;
+    const batchSize = 499;
+    for (var i = 0; i < docs.length; i += batchSize) {
+      final chunk = docs.skip(i).take(batchSize);
+      final batch = _db.batch();
+      for (final doc in chunk) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
 }

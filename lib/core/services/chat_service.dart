@@ -273,4 +273,48 @@ class ChatService {
       await _db.collection(_chats).doc(chatId).update({'customerUnread': 0});
     } catch (_) {}
   }
+
+  // ── Bulk deletion ──────────────────────────────────────────────────────────
+
+  /// Deletes every chat thread (and all its messages) whose [customerPhone]
+  /// matches [phone]. Firestore does not cascade-delete subcollections, so
+  /// each thread's messages sub-collection is cleared first.
+  Future<void> deleteThreadsByPhone(String phone) async {
+    final snap = await _db
+        .collection(_chats)
+        .where('customerPhone', isEqualTo: phone)
+        .get();
+    await _deleteThreadDocs(snap.docs);
+  }
+
+  /// Deletes every chat thread (and all its messages) whose [customerId]
+  /// matches [uid]. Covers threads opened before the customer added a phone.
+  Future<void> deleteThreadsByUid(String uid) async {
+    final snap =
+        await _db.collection(_chats).where('customerId', isEqualTo: uid).get();
+    await _deleteThreadDocs(snap.docs);
+  }
+
+  /// For each thread doc: delete messages subcollection first, then the thread.
+  Future<void> _deleteThreadDocs(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> threads) async {
+    for (final thread in threads) {
+      // Delete all messages in this thread (subcollection must be cleared manually)
+      final msgSnap = await thread.reference.collection(_messages).get();
+      if (msgSnap.docs.isNotEmpty) {
+        const batchSize = 499;
+        final msgDocs = msgSnap.docs;
+        for (var i = 0; i < msgDocs.length; i += batchSize) {
+          final chunk = msgDocs.skip(i).take(batchSize);
+          final batch = _db.batch();
+          for (final msg in chunk) {
+            batch.delete(msg.reference);
+          }
+          await batch.commit();
+        }
+      }
+      // Now delete the thread document itself
+      await thread.reference.delete();
+    }
+  }
 }

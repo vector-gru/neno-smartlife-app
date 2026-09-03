@@ -158,15 +158,35 @@ class AuthService {
 
   /// Deletes the customer's Firestore document and Firebase Auth account.
   /// After this the user is fully gone — no recovery.
+  ///
+  /// Firebase requires a recent sign-in before deleting an Auth account.
+  /// Anonymous accounts cannot re-authenticate, so if [user.delete()] throws
+  /// [requires-recent-login] we fall back to signing the user out and creating
+  /// a fresh anonymous session. The orphaned Auth account has no data left and
+  /// Firebase purges unused anonymous accounts automatically.
   Future<void> deleteCurrentCustomerAccount() async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    // Delete Firestore identity document
+    // Delete the Firestore identity document first.
     await _db.collection(_customersCollection).doc(user.uid).delete();
 
-    // Delete the Firebase Auth account
-    await user.delete();
+    // Attempt to delete the Firebase Auth account.
+    try {
+      await user.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        // Anonymous accounts cannot re-authenticate. Sign out and create a
+        // fresh anonymous session — the app treats this as a new account.
+        // The orphaned Auth account has no data left; Firebase purges unused
+        // anonymous accounts automatically.
+        await _auth.signOut();
+        final cred = await _auth.signInAnonymously();
+        await cred.user?.getIdToken(true);
+      } else {
+        rethrow;
+      }
+    }
   }
 
   // ── Auth error helpers ─────────────────────────────────────────────────────

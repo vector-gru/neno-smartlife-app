@@ -445,7 +445,9 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
         content: Text(
-          l10n.accountClearHistoryConfirmBody,
+          'This will permanently delete your order history, purchase requests, '
+          'interest signals, chat threads, saved favourites, and cart.\n\n'
+          'Your name and phone number stay on the account. This action cannot be undone.',
           style: GoogleFonts.poppins(
             fontSize: 13,
             color: AppColors.textSecondary,
@@ -464,27 +466,48 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              state.clearHistory();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'History cleared.',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+              try {
+                await state.clearHistory();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'History cleared.',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.all(16),
+                      duration: const Duration(seconds: 2),
                     ),
-                  ),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  margin: const EdgeInsets.all(16),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+                  );
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Could not clear history. Please try again.',
+                        style: GoogleFonts.poppins(color: Colors.white),
+                      ),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.all(16),
+                    ),
+                  );
+                }
+              }
             },
             child: Text(
               l10n.accountClearHistoryConfirm,
@@ -547,9 +570,11 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
         content: Text(
-          'This will permanently delete your name, phone number, saved favourites, '
-          'and purchase history from this app.\n\n'
-          'This action cannot be undone. You will become a guest again.',
+          'This will permanently delete everything linked to your account — '
+          'your name, phone number, saved favourites, order history, purchase '
+          'requests, interest signals, and all chat conversations.\n\n'
+          'If you rejoin with the same phone number it will be treated as a '
+          'completely new account. This action cannot be undone.',
           style: GoogleFonts.poppins(
             fontSize: 13,
             color: AppColors.textSecondary,
@@ -589,7 +614,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   );
                 }
-              } catch (_) {
+              } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

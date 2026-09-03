@@ -285,46 +285,138 @@ class AppStateProviderState extends State<AppStateProvider> {
     // _orderSub stream will update _orders automatically
   }
 
-  /// Clears all local state — called from the Account screen.
-  void clearHistory() {
+  /// Clears the customer's activity history from Firestore and local storage,
+  /// but keeps their account (name, phone) intact.
+  ///
+  /// Deletes from Firestore (matched by phone + uid so nothing is missed):
+  ///   • orders
+  ///   • purchase_requests
+  ///   • interest_requests
+  ///   • chat threads and all their messages
+  ///
+  /// Also clears local cart (SharedPreferences) and wipes the Firestore
+  /// favourites array so nothing re-appears on the next launch.
+  Future<void> clearHistory() async {
+    final uid = _authService.currentUser?.uid;
+    final phone = _customerIdentity?.phone ?? '';
+
+    // 1. Stop the order stream before deleting so it doesn't try to reconcile
+    //    docs that no longer exist.
+    _orderSub?.cancel();
+    _orderSub = null;
+    _chatSub?.cancel();
+    _chatSub = null;
+
+    // 2. Wipe local state immediately so the UI reflects the change at once.
     setState(() {
       _cartItems.clear();
       _favourites.clear();
       _orders.clear();
       _cartLoaded = false;
     });
-    _customerDataService.clearCart();
-    _orderSub?.cancel();
-    _orderSub = null;
-    // Also wipe favourites in Firestore so they don't restore on next launch
-    final uid = _authService.currentUser?.uid;
-    if (uid != null) {
-      _customerDataService.saveFavourites(uid, []);
-    }
-  }
 
-  /// Permanently deletes the customer's account and all associated data.
-  /// Irreversible. After this call the user becomes an unauthenticated guest.
-  Future<void> deleteAccount() async {
-    final uid = _authService.currentUser?.uid;
-
-    // Clear local state first
-    setState(() {
-      _cartItems.clear();
-      _favourites.clear();
-      _orders.clear();
-      _cartLoaded = false;
-    });
-    _orderSub?.cancel();
-    _orderSub = null;
+    // 3. Clear local cart from SharedPreferences.
     await _customerDataService.clearCart();
 
-    // Delete Firestore data + Firebase Auth account
+    // 4. Clear Firestore favourites so they don't restore on next launch.
     if (uid != null) {
       await _customerDataService.saveFavourites(uid, []);
     }
+
+    // 5. Delete all Firestore records linked to this customer.
+    //    We run phone-based and uid-based deletes in parallel so records
+    //    written under either key are fully removed.
+    final futures = <Future<void>>[];
+
+    if (phone.isNotEmpty) {
+      futures.addAll([
+        _customerDataService.deleteOrdersByPhone(phone),
+        _purchaseRequestService.deleteRequestsByPhone(phone),
+        _interestService.deleteRequestsByPhone(phone),
+        ChatService.instance.deleteThreadsByPhone(phone),
+      ]);
+    }
+    if (uid != null) {
+      futures.addAll([
+        _customerDataService.deleteOrdersByUid(uid),
+        _purchaseRequestService.deleteRequestsByUid(uid),
+        _interestService.deleteRequestsByUid(uid),
+        ChatService.instance.deleteThreadsByUid(uid),
+      ]);
+    }
+    await Future.wait(futures);
+
+    // 6. Re-subscribe to the order stream (will be empty now, but keeps
+    //    the UI reactive for any new orders the customer places).
+    if (uid != null) {
+      if (phone.isNotEmpty) {
+        _subscribeToOrdersByPhone(phone);
+      } else {
+        _subscribeToOrders(uid);
+      }
+      _subscribeToChatNotifications(uid);
+    }
+  }
+
+  /// Permanently deletes the customer's account AND every piece of data
+  /// linked to them. Irreversible.
+  ///
+  /// After this call:
+  ///   • All Firestore records are gone (orders, purchase_requests,
+  ///     interest_requests, chats + messages, customers/{uid} identity doc).
+  ///   • The Firebase Auth account is deleted.
+  ///   • Local state is cleared.
+  ///   • If the same phone number is used to join again, it will be treated
+  ///     as a completely new account.
+  Future<void> deleteAccount() async {
+    final uid = _authService.currentUser?.uid;
+    final phone = _customerIdentity?.phone ?? '';
+
+    // 1. Stop all live subscriptions before we nuke the data.
+    _orderSub?.cancel();
+    _orderSub = null;
+    _chatSub?.cancel();
+    _chatSub = null;
+
+    // 2. Clear local state immediately.
+    setState(() {
+      _cartItems.clear();
+      _favourites.clear();
+      _orders.clear();
+      _cartLoaded = false;
+    });
+
+    // 3. Clear local cart from SharedPreferences.
+    await _customerDataService.clearCart();
+
+    // 4. Delete all Firestore records linked to this customer.
+    //    Run phone-based and uid-based deletes in parallel so nothing is left
+    //    behind regardless of which key a document was indexed under.
+    final futures = <Future<void>>[];
+
+    if (phone.isNotEmpty) {
+      futures.addAll([
+        _customerDataService.deleteOrdersByPhone(phone),
+        _purchaseRequestService.deleteRequestsByPhone(phone),
+        _interestService.deleteRequestsByPhone(phone),
+        ChatService.instance.deleteThreadsByPhone(phone),
+      ]);
+    }
+    if (uid != null) {
+      futures.addAll([
+        _customerDataService.deleteOrdersByUid(uid),
+        _purchaseRequestService.deleteRequestsByUid(uid),
+        _interestService.deleteRequestsByUid(uid),
+        ChatService.instance.deleteThreadsByUid(uid),
+      ]);
+    }
+    await Future.wait(futures);
+
+    // 5. Delete the customers/{uid} identity document + Firebase Auth account.
+    //    This is done last so Firestore security rules (which check auth.uid)
+    //    are still valid for all the deletes above.
     await _authService.deleteCurrentCustomerAccount();
-    // _onAuthStateChanged fires → sets state to unauthenticated
+    // _onAuthStateChanged fires → transitions to unauthenticated / fresh guest.
   }
 
   // ── Interest requests ──────────────────────────────────────────────────────

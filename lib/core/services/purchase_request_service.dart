@@ -213,6 +213,40 @@ class PurchaseRequestService {
     }
   }
 
+  // ── Bulk deletion ──────────────────────────────────────────────────────────
+
+  /// Deletes every purchase request document whose [customerPhone] matches
+  /// [phone]. Uses batched writes (max 499 per batch).
+  Future<void> deleteRequestsByPhone(String phone) async {
+    final snap = await _db
+        .collection(_col)
+        .where('customerPhone', isEqualTo: phone)
+        .get();
+    await _deleteDocs(snap.docs);
+  }
+
+  /// Deletes every purchase request document whose [customerId] matches [uid].
+  /// Covers requests written before the customer added a phone number.
+  Future<void> deleteRequestsByUid(String uid) async {
+    final snap =
+        await _db.collection(_col).where('customerId', isEqualTo: uid).get();
+    await _deleteDocs(snap.docs);
+  }
+
+  Future<void> _deleteDocs(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
+    if (docs.isEmpty) return;
+    const batchSize = 499;
+    for (var i = 0; i < docs.length; i += batchSize) {
+      final chunk = docs.skip(i).take(batchSize);
+      final batch = _db.batch();
+      for (final doc in chunk) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+
   /// Maps admin request status → orders collection status string.
   ///
   /// confirmed    → completed   (admin confirmed the sale)
