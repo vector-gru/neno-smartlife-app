@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/services/chat_service.dart';
 import '../../core/services/purchase_request_service.dart';
 import '../../core/state/app_state.dart';
 import '../../routes/app_router.dart';
@@ -239,10 +240,19 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final isInDiscussion = request.isInDiscussion;
+    final state = context.appState;
+    final customerId = state.customerIdentity?.uid ?? '';
+    final customerName = state.customerIdentity?.fullName ?? '';
+
+    Widget card = Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isInDiscussion
+            ? Border.all(
+                color: const Color(0xFF9333EA).withValues(alpha: 0.3), width: 1)
+            : null,
         boxShadow: const [
           BoxShadow(
               color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
@@ -300,10 +310,62 @@ class _RequestCard extends StatelessWidget {
               const SizedBox(height: 10),
               _StatusMessage(status: request.status),
             ],
+
+            // ── Open chat CTA for inDiscussion ────────────────────────────
+            if (isInDiscussion) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 42,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openChat(context, customerId, customerName),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF9333EA),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                  label: Text(
+                    'Open Discussion',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+
+    return card;
+  }
+
+  Future<void> _openChat(
+      BuildContext context, String customerId, String customerName) async {
+    // Ensure the thread exists (idempotent — safe to call if already created)
+    await ChatService.instance.ensureThread(
+      chatId: request.id,
+      customerId: customerId.isNotEmpty ? customerId : request.id,
+      customerName: customerName,
+      customerPhone: request.phone,
+      productName: request.productName,
+    );
+    if (context.mounted) {
+      AppRouter.goToChat(
+        context,
+        chatId: request.id,
+        peerName: 'Neno SmartLife',
+        productName: request.productName,
+        isAdmin: false,
+        senderId: customerId,
+        senderName: customerName,
+      );
+    }
   }
 }
 
