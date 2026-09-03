@@ -97,14 +97,17 @@ class CustomerDataService {
     return _db
         .collection('orders')
         .where('customerId', isEqualTo: customerId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => AppOrder.fromFirestore(
-                  doc as DocumentSnapshot<Map<String, dynamic>>,
-                  liveProducts,
-                ))
-            .toList());
+        .map((snap) {
+      final list = snap.docs
+          .map((doc) => AppOrder.fromFirestore(
+                doc as DocumentSnapshot<Map<String, dynamic>>,
+                liveProducts,
+              ))
+          .toList();
+      list.sort((a, b) => b.purchasedAt.compareTo(a.purchasedAt));
+      return list;
+    });
   }
 
   /// Live stream of orders by phone number — used for cross-device restore.
@@ -115,28 +118,31 @@ class CustomerDataService {
     return _db
         .collection('orders')
         .where('customerPhone', isEqualTo: phone)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => AppOrder.fromFirestore(
-                  doc as DocumentSnapshot<Map<String, dynamic>>,
-                  liveProducts,
-                ))
-            .toList());
+        .map((snap) {
+      final list = snap.docs
+          .map((doc) => AppOrder.fromFirestore(
+                doc as DocumentSnapshot<Map<String, dynamic>>,
+                liveProducts,
+              ))
+          .toList();
+      list.sort((a, b) => b.purchasedAt.compareTo(a.purchasedAt));
+      return list;
+    });
   }
 
   /// Live stream of ALL orders for the admin dashboard, newest first.
   Stream<List<AppOrder>> watchAllOrders(List<Product> liveProducts) {
-    return _db
-        .collection('orders')
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((doc) => AppOrder.fromFirestore(
-                  doc as DocumentSnapshot<Map<String, dynamic>>,
-                  liveProducts,
-                ))
-            .toList());
+    return _db.collection('orders').snapshots().map((snap) {
+      final list = snap.docs
+          .map((doc) => AppOrder.fromFirestore(
+                doc as DocumentSnapshot<Map<String, dynamic>>,
+                liveProducts,
+              ))
+          .toList();
+      list.sort((a, b) => b.purchasedAt.compareTo(a.purchasedAt));
+      return list;
+    });
   }
 
   // ── Admin FCM token ────────────────────────────────────────────────────────

@@ -10,7 +10,8 @@
 // │  customerId   : String   (anonymous Firebase UID)                    │
 // │  customerName : String                                               │
 // │  customerPhone: String                                               │
-// │  products     : List<Map>  [ { name, imageUrl, variant? } ]          │
+// │  orderId      : String   (matching orders/{orderId} document)        │
+// │  products     : List<Map>  [ { name, imageUrl, variant?, quantity } ]│
 // │  status       : String   'new' | 'inDiscussion' | 'confirmed'        │
 // │                          | 'rejected'                                 │
 // │  createdAt    : Timestamp                                             │
@@ -32,17 +33,21 @@ class PurchaseRequestService {
   // ── Customer: submit cart as a purchase request ────────────────────────────
 
   /// Writes a new purchase request document and returns its Firestore ID.
+  /// [orderId] links this request to its corresponding orders/{orderId} doc
+  /// so admin status changes can be reflected back to the customer.
   /// Throws on failure so the caller can surface the error to the user.
   Future<String> submitRequest({
     required String customerId,
     required String customerName,
     required String customerPhone,
     required List<CartItem> items,
+    required String orderId,
   }) async {
     final ref = await _db.collection(_col).add({
       'customerId': customerId,
       'customerName': customerName,
       'customerPhone': customerPhone,
+      'orderId': orderId,
       'products': items
           .map((i) => {
                 'name': i.product.name,
@@ -57,6 +62,27 @@ class PurchaseRequestService {
       'createdAt': FieldValue.serverTimestamp(),
     });
     return ref.id;
+  }
+
+  // ── Customer: live stream of their own requests ────────────────────────────
+
+  /// Streams all purchase requests for a given customer phone number,
+  /// newest first. Used by the customer-facing orders screen so status
+  /// changes made by the admin appear in real time.
+  Stream<List<AdminRequest>> watchRequestsByPhone(String phone) {
+    return _db
+        .collection(_col)
+        .where('customerPhone', isEqualTo: phone)
+        .snapshots()
+        .handleError((error) {
+      // ignore: avoid_print
+      print('[PurchaseRequestService] watchRequestsByPhone error: $error');
+    }).map((snap) {
+      final requests =
+          snap.docs.map(_docToAdminRequest).whereType<AdminRequest>().toList();
+      requests.sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+      return requests;
+    });
   }
 
   // ── Admin: live stream of all requests, newest first ───────────────────────
@@ -78,13 +104,44 @@ class PurchaseRequestService {
 
   // ── Admin: status mutations ────────────────────────────────────────────────
 
-  Future<void> updateStatus(String id, CustomerRequestStatus status) async {
+  /// Updates the purchase request status and mirrors it to the linked
+  /// orders document so the customer sees the change immediately.
+  Future<void> updateStatus(
+      String requestId, CustomerRequestStatus status) async {
     try {
-      await _db
-          .collection(_col)
-          .doc(id)
-          .update({'status': _statusToString(status)});
-    } catch (_) {}
+      // 1. Update the purchase_request document itself.
+      final reqRef = _db.collection(_col).doc(requestId);
+      await reqRef.update({'status': _statusToString(status)});
+      // ignore: avoid_print
+      print(
+          '[PurchaseRequestService] request $requestId → ${_statusToString(status)}');
+
+      // 2. Mirror the status to the linked orders document.
+      final snap = await reqRef.get();
+      final orderId = snap.data()?['orderId'] as String?;
+      // ignore: avoid_print
+      print('[PurchaseRequestService] linked orderId: $orderId');
+
+      if (orderId != null && orderId.isNotEmpty) {
+        final orderStatus = _toOrderStatus(status);
+        // ignore: avoid_print
+        print(
+            '[PurchaseRequestService] updating orders/$orderId → $orderStatus');
+        await _db
+            .collection('orders')
+            .doc(orderId)
+            .update({'status': orderStatus});
+        // ignore: avoid_print
+        print('[PurchaseRequestService] orders/$orderId updated ✓');
+      } else {
+        // ignore: avoid_print
+        print(
+            '[PurchaseRequestService] no orderId on request — order not synced');
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('[PurchaseRequestService] updateStatus error: $e');
+    }
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -153,6 +210,25 @@ class PurchaseRequestService {
         return 'rejected';
       case CustomerRequestStatus.newRequest:
         return 'new';
+    }
+  }
+
+  /// Maps admin request status → orders collection status string.
+  ///
+  /// confirmed    → completed   (admin confirmed the sale)
+  /// inDiscussion → processing  (admin is actively working on it)
+  /// rejected     → pending     (no good match; left as-is so the order
+  ///                             stays visible to the customer)
+  /// new          → pending     (no change yet)
+  static String _toOrderStatus(CustomerRequestStatus s) {
+    switch (s) {
+      case CustomerRequestStatus.confirmed:
+        return 'completed';
+      case CustomerRequestStatus.inDiscussion:
+        return 'processing';
+      case CustomerRequestStatus.rejected:
+      case CustomerRequestStatus.newRequest:
+        return 'pending';
     }
   }
 }

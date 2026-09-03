@@ -230,18 +230,30 @@ class AppStateProviderState extends State<AppStateProvider> {
   void _subscribeToOrders(String uid) {
     _orderSub?.cancel();
     _orderSub = _customerDataService.watchOrders(uid, _products).listen(
-          (orders) => setState(() => _orders = orders),
-          onError: (_) {},
-        );
+      (orders) {
+        // ignore: avoid_print
+        print(
+            '[AppState] watchOrders(uid) emitted ${orders.length} orders: ${orders.map((o) => '${o.id}:${o.status.name}').join(', ')}');
+        setState(() => _orders = orders);
+      },
+      // ignore: avoid_print
+      onError: (e) => print('[AppState] watchOrders error: $e'),
+    );
   }
 
   void _subscribeToOrdersByPhone(String phone) {
     _orderSub?.cancel();
     _orderSub =
         _customerDataService.watchOrdersByPhone(phone, _products).listen(
-              (orders) => setState(() => _orders = orders),
-              onError: (_) {},
-            );
+      (orders) {
+        // ignore: avoid_print
+        print(
+            '[AppState] watchOrdersByPhone emitted ${orders.length} orders: ${orders.map((o) => '${o.id}:${o.status.name}').join(', ')}');
+        setState(() => _orders = orders);
+      },
+      // ignore: avoid_print
+      onError: (e) => print('[AppState] watchOrdersByPhone error: $e'),
+    );
   }
 
   /// Converts the current cart into a new pending order, saves to Firestore,
@@ -258,14 +270,16 @@ class AppStateProviderState extends State<AppStateProvider> {
       purchasedAt: DateTime.now(),
       status: OrderStatus.pending,
     );
-    await _customerDataService.createOrder(order);
+    final saved = await _customerDataService.createOrder(order);
     // Also write a purchase_requests document so the admin sees it on the
-    // Requests screen immediately.
+    // Requests screen immediately. Pass the order ID so status changes
+    // made by the admin are reflected back on the customer's orders screen.
     await _purchaseRequestService.submitRequest(
       customerId: uid,
       customerName: _customerIdentity?.fullName ?? '',
       customerPhone: _customerIdentity?.phone ?? '',
       items: List.from(_cartItems),
+      orderId: saved.id,
     );
     clearCart();
     // _orderSub stream will update _orders automatically
