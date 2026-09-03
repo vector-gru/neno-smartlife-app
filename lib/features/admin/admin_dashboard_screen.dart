@@ -222,46 +222,54 @@ class _OverviewTab extends StatelessWidget {
             ),
           ),
           actions: [
-            // Notification bell — StreamBuilder gives it its own rebuild cycle
-            // so the badge updates even when other parts of the tree don't.
+            // Notification bell — nested StreamBuilders combine both unread
+            // counts (interest requests + purchase requests) into one badge.
             StreamBuilder<int>(
               stream: InterestRequestService.instance.watchUnreadCount(),
               initialData: 0,
-              builder: (context, snap) {
-                final count = snap.data ?? 0;
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    IconButton(
-                      tooltip: 'Interest Requests',
-                      icon: const Icon(Icons.notifications_outlined,
-                          color: AppColors.textPrimary, size: 22),
-                      onPressed: onOpenNotifications,
-                    ),
-                    if (count > 0)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 17,
-                          height: 17,
-                          decoration: const BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              count > 99 ? '99+' : '$count',
-                              style: GoogleFonts.poppins(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
+              builder: (context, interestSnap) {
+                return StreamBuilder<int>(
+                  stream: PurchaseRequestService.instance
+                      .watchUnreadPurchaseCount(),
+                  initialData: 0,
+                  builder: (context, purchaseSnap) {
+                    final count =
+                        (interestSnap.data ?? 0) + (purchaseSnap.data ?? 0);
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        IconButton(
+                          tooltip: 'Notifications',
+                          icon: const Icon(Icons.notifications_outlined,
+                              color: AppColors.textPrimary, size: 22),
+                          onPressed: onOpenNotifications,
+                        ),
+                        if (count > 0)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              width: 17,
+                              height: 17,
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  count > 99 ? '99+' : '$count',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 );
               },
             ),

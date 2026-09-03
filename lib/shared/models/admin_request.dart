@@ -22,6 +22,7 @@ class AdminRequest {
   final List<RequestedProduct> products;
   final DateTime requestedAt;
   CustomerRequestStatus status;
+  final bool seenByAdmin;
 
   AdminRequest({
     required this.id,
@@ -30,6 +31,7 @@ class AdminRequest {
     required this.products,
     required this.requestedAt,
     this.status = CustomerRequestStatus.newRequest,
+    this.seenByAdmin = false,
   });
 
   // ── Convenience getters used by the overview tab ──────────────────────────

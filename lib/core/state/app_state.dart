@@ -16,6 +16,7 @@ import '../services/notification_service.dart';
 import '../services/product_service.dart';
 import '../services/purchase_request_service.dart';
 import '../../shared/models/admin_category.dart';
+import '../../shared/models/admin_request.dart';
 import '../../shared/models/cart_item.dart';
 import '../../shared/models/order.dart';
 import '../../shared/models/product.dart';
@@ -52,6 +53,7 @@ class AppStateProviderState extends State<AppStateProvider> {
   StreamSubscription<List<AdminCategory>>? _categorySub;
   StreamSubscription<List<AppOrder>>? _orderSub;
   StreamSubscription<List<InterestRequest>>? _interestSub;
+  StreamSubscription<List<AdminRequest>>? _purchaseRequestSub;
   StreamSubscription? _chatSub;
 
   // ── Session bridging ───────────────────────────────────────────────────────
@@ -505,6 +507,28 @@ class AppStateProviderState extends State<AppStateProvider> {
     );
   }
 
+  // IDs we've already notified for purchase requests this session.
+  final Set<String> _notifiedPurchaseRequestIds = {};
+
+  void _subscribeToPurchaseRequests() {
+    _purchaseRequestSub?.cancel();
+    _purchaseRequestSub =
+        _purchaseRequestService.watchNewPurchaseRequests().listen(
+      (requests) async {
+        for (final req in requests) {
+          if (_notifiedPurchaseRequestIds.contains(req.id)) continue;
+          _notifiedPurchaseRequestIds.add(req.id);
+          await _notificationService.showPurchaseRequestNotification(
+            customerName: req.customerName,
+            customerPhone: req.phone,
+            productNames: req.products.map((p) => p.name).toList(),
+          );
+        }
+      },
+      onError: (_) {},
+    );
+  }
+
   // ── Customer: chat message notifications ──────────────────────────────────
 
   /// Watches the customer's chat threads for new messages from admin.
@@ -612,6 +636,8 @@ class AppStateProviderState extends State<AppStateProvider> {
       _saveAdminFcmToken(user.uid);
       // Start listening for new customer interest requests.
       _subscribeToInterestRequests();
+      // Start listening for new purchase requests.
+      _subscribeToPurchaseRequests();
     } else {
       final identity = await _authService.fetchCustomerIdentity();
       if (!mounted) return;
@@ -674,6 +700,9 @@ class AppStateProviderState extends State<AppStateProvider> {
     _interestSub?.cancel();
     _interestSub = null;
     _notifiedRequestIds.clear();
+    _purchaseRequestSub?.cancel();
+    _purchaseRequestSub = null;
+    _notifiedPurchaseRequestIds.clear();
     _chatSub?.cancel();
     _chatSub = null;
     await _authService.signOut();
@@ -691,6 +720,7 @@ class AppStateProviderState extends State<AppStateProvider> {
     _categorySub?.cancel();
     _orderSub?.cancel();
     _interestSub?.cancel();
+    _purchaseRequestSub?.cancel();
     _chatSub?.cancel();
     super.dispose();
   }

@@ -60,6 +60,7 @@ class PurchaseRequestService {
           .toList(),
       'status': 'new',
       'createdAt': FieldValue.serverTimestamp(),
+      'seenByAdmin': false,
     });
     return ref.id;
   }
@@ -83,6 +84,52 @@ class PurchaseRequestService {
       requests.sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
       return requests;
     });
+  }
+
+  // ── Admin: unread badge count ──────────────────────────────────────────────
+
+  /// Stream of the current unread purchase-request count (seenByAdmin == false).
+  /// Lightweight — used for the combined badge on the notification bell.
+  Stream<int> watchUnreadPurchaseCount() {
+    return _db
+        .collection(_col)
+        .where('seenByAdmin', isEqualTo: false)
+        .snapshots()
+        .handleError((error) {
+      // ignore: avoid_print
+      print('[PurchaseRequestService] watchUnreadPurchaseCount error: $error');
+    }).map((snap) => snap.size);
+  }
+
+  /// Marks a purchase request as seen by the admin.
+  Future<void> markPurchaseSeen(String requestId) async {
+    try {
+      await _db.collection(_col).doc(requestId).update({'seenByAdmin': true});
+    } catch (_) {}
+  }
+
+  // ── Admin: delta stream for push notifications ────────────────────────────
+
+  /// Emits only *newly added* purchase requests — triggers a local push
+  /// notification in AppStateProvider when the admin is logged in.
+  /// Mirrors the pattern used by InterestRequestService.watchNewRequests().
+  Stream<List<AdminRequest>> watchNewPurchaseRequests() {
+    final cutoff = Timestamp.fromDate(
+      DateTime.now().subtract(const Duration(days: 30)),
+    );
+    return _db
+        .collection(_col)
+        .where('status', isEqualTo: 'new')
+        .where('createdAt', isGreaterThan: cutoff)
+        .snapshots()
+        .handleError((error) {
+      // ignore: avoid_print
+      print('[PurchaseRequestService] watchNewPurchaseRequests error: $error');
+    }).map((snap) => snap.docChanges
+            .where((c) => c.type == DocumentChangeType.added)
+            .map((c) => _docToAdminRequest(c.doc))
+            .whereType<AdminRequest>()
+            .toList());
   }
 
   // ── Admin: live stream of all requests, newest first ───────────────────────
@@ -181,6 +228,7 @@ class PurchaseRequestService {
         products: products,
         requestedAt: createdAt,
         status: status,
+        seenByAdmin: d['seenByAdmin'] as bool? ?? false,
       );
     } catch (_) {
       return null;
