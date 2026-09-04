@@ -883,63 +883,9 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) {
-        final keyCtrl = TextEditingController();
-        final valCtrl = TextEditingController();
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Add Custom Field',
-                  style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 16),
-              _fieldLabel('Field Name'),
-              TextField(
-                controller: keyCtrl,
-                autofocus: true,
-                style: GoogleFonts.poppins(fontSize: 14),
-                decoration: _inputDecoration('e.g. Warranty'),
-              ),
-              const SizedBox(height: 12),
-              _fieldLabel('Value'),
-              TextField(
-                controller: valCtrl,
-                style: GoogleFonts.poppins(fontSize: 14),
-                decoration: _inputDecoration('e.g. 2 Years'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  final k = keyCtrl.text.trim();
-                  final v = valCtrl.text.trim();
-                  if (k.isNotEmpty) {
-                    setState(() => _specs.add(MapEntry(k, v)));
-                  }
-                  Navigator.of(ctx).pop();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  minimumSize: const Size(double.infinity, 46),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: Text('Add Field',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (ctx) => _AddCustomFieldSheet(
+        onAdd: (k, v) => setState(() => _specs.add(MapEntry(k, v))),
+      ),
     );
   }
 
@@ -1480,5 +1426,132 @@ class _SpecRow extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Add Custom Field sheet — StatefulWidget so controllers survive rebuilds
+// (keyboard appear/disappear or accidental swipe gestures no longer wipe text)
+// ─────────────────────────────────────────────────────────────────────────────
+class _AddCustomFieldSheet extends StatefulWidget {
+  final void Function(String key, String value) onAdd;
+
+  const _AddCustomFieldSheet({required this.onAdd});
+
+  @override
+  State<_AddCustomFieldSheet> createState() => _AddCustomFieldSheetState();
+}
+
+class _AddCustomFieldSheetState extends State<_AddCustomFieldSheet> {
+  final _keyCtrl = TextEditingController();
+  final _valCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _keyCtrl.dispose();
+    _valCtrl.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _dec(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle:
+            GoogleFonts.poppins(fontSize: 13, color: AppColors.textMuted),
+        filled: true,
+        fillColor: const Color(0xFFF4F4F4),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            'Add Custom Field',
+            style:
+                GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          Text('Field Name',
+              style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _keyCtrl,
+            autofocus: true,
+            style: GoogleFonts.poppins(fontSize: 14),
+            decoration: _dec('e.g. Warranty'),
+          ),
+          const SizedBox(height: 12),
+          Text('Value',
+              style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary)),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _valCtrl,
+            style: GoogleFonts.poppins(fontSize: 14),
+            decoration: _dec('e.g. 2 Years'),
+            onSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.textOnPrimary,
+              minimumSize: const Size(double.infinity, 46),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: Text('Add Field',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submit() {
+    final k = _keyCtrl.text.trim();
+    final v = _valCtrl.text.trim();
+    if (k.isNotEmpty) {
+      widget.onAdd(k, v);
+    }
+    Navigator.of(context).pop();
   }
 }
