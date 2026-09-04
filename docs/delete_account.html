@@ -1,639 +1,969 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Delete Your Account — Neno SmartLife</title>
-  <meta name="description" content="Request deletion of your Neno SmartLife account and associated personal data." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delete Your Account — Neno SmartLife</title>
+    <meta
+      name="description"
+      content="Delete your Neno SmartLife account and all associated personal data — instantly from the app, or by contacting us."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    :root {
-      --primary:        #B5D317;
-      --primary-dark:   #8EAA00;
-      --primary-light:  #D4F04A;
-      --bg:             #0A0A0A;
-      --surface:        #141414;
-      --surface-alt:    #1E1E1E;
-      --border:         #2A2A2A;
-      --text-primary:   #F5F5F5;
-      --text-secondary: #AAAAAA;
-      --text-muted:     #666666;
-      --danger:         #EF4444;
-      --danger-soft:    rgba(239,68,68,0.12);
-      --danger-border:  rgba(239,68,68,0.3);
-    }
+      :root {
+        --primary: #b5d317;
+        --primary-dark: #8eaa00;
+        --primary-light: #d4f04a;
+        --bg: #0a0a0a;
+        --surface: #141414;
+        --surface-alt: #1e1e1e;
+        --border: #2a2a2a;
+        --text-primary: #f5f5f5;
+        --text-secondary: #aaaaaa;
+        --text-muted: #666666;
+        --danger: #ef4444;
+        --danger-dark: #dc2626;
+        --danger-soft: rgba(239, 68, 68, 0.1);
+        --danger-border: rgba(239, 68, 68, 0.28);
+      }
 
-    html { scroll-behavior: smooth; }
+      html {
+        scroll-behavior: smooth;
+      }
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--bg);
-      color: var(--text-primary);
-      line-height: 1.7;
-      -webkit-font-smoothing: antialiased;
-    }
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--bg);
+        color: var(--text-primary);
+        line-height: 1.7;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    /* ── NAV ── */
-    nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(10,10,10,0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 24px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .nav-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-decoration: none;
-      letter-spacing: -0.3px;
-    }
-    .nav-logo span { color: var(--primary); }
-    .nav-back {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .nav-back:hover { color: var(--primary); }
-    .nav-back svg {
-      width: 16px; height: 16px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
+      /* ── NAV ── */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(10, 10, 10, 0.88);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 24px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .nav-logo {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        text-decoration: none;
+        letter-spacing: -0.3px;
+      }
+      .nav-logo span {
+        color: var(--primary);
+      }
+      .nav-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .nav-back:hover {
+        color: var(--primary);
+      }
+      .nav-back svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
 
-    /* ── PAGE HEADER ── */
-    .page-header {
-      padding: 72px 24px 56px;
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      overflow: hidden;
-    }
-    .page-header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 50% 80% at 50% -30%, rgba(239,68,68,0.08) 0%, transparent 65%);
-      pointer-events: none;
-    }
-    .page-header-inner {
-      max-width: 680px;
-      margin: 0 auto;
-      position: relative;
-      text-align: center;
-    }
-    .page-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--danger);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .page-label svg {
-      width: 14px; height: 14px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2.5;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .page-header h1 {
-      font-size: clamp(30px, 5vw, 48px);
-      font-weight: 800;
-      letter-spacing: -1px;
-      line-height: 1.1;
-      margin-bottom: 20px;
-    }
-    .page-header .app-name {
-      color: var(--primary);
-    }
-    .page-header .tagline {
-      font-size: 16px;
-      color: var(--text-secondary);
-      max-width: 480px;
-      margin: 0 auto;
-      line-height: 1.65;
-    }
+      /* ── PAGE HEADER ── */
+      .page-header {
+        padding: 72px 24px 56px;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+      }
+      .page-header::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          ellipse 50% 80% at 50% -30%,
+          rgba(239, 68, 68, 0.07) 0%,
+          transparent 65%
+        );
+        pointer-events: none;
+      }
+      .page-header-inner {
+        max-width: 680px;
+        margin: 0 auto;
+        position: relative;
+        text-align: center;
+      }
+      .page-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--danger);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .page-header h1 {
+        font-size: clamp(30px, 5vw, 48px);
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1.1;
+        margin-bottom: 12px;
+      }
+      .page-header .app-name {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 20px;
+        display: block;
+      }
+      .page-header .tagline {
+        font-size: 15px;
+        color: var(--text-secondary);
+        max-width: 500px;
+        margin: 0 auto;
+        line-height: 1.7;
+      }
 
-    /* ── MAIN LAYOUT ── */
-    .page-body {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 56px 24px 96px;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
+      /* ── BODY ── */
+      .page-body {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 56px 24px 96px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
 
-    /* ── CARDS ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 32px;
-    }
-    .card-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .card-title .icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .icon-danger { background: var(--danger-soft); }
-    .icon-info   { background: rgba(181,211,23,0.12); }
-    .icon-clock  { background: rgba(99,102,241,0.12); }
+      /* ── WARNING ── */
+      .warning {
+        background: var(--danger-soft);
+        border: 1px solid var(--danger-border);
+        border-radius: 14px;
+        padding: 18px 22px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .warning-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .warning-text {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.65;
+      }
+      .warning-text strong {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
 
-    /* ── DATA LIST ── */
-    .data-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .data-list li {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-    .data-list li::before {
-      content: '';
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--danger);
-      flex-shrink: 0;
-    }
-    .data-list li strong {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
+      /* ── SECTION DIVIDER ── */
+      .section-divider {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+      }
+      .section-divider::before,
+      .section-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
 
-    /* ── STEPS LIST ── */
-    .steps-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      counter-reset: step;
-    }
-    .steps-list li {
-      counter-increment: step;
-      display: flex;
-      gap: 14px;
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.65;
-    }
-    .steps-list li::before {
-      content: counter(step);
-      min-width: 26px; height: 26px;
-      border-radius: 8px;
-      background: rgba(181,211,23,0.12);
-      border: 1px solid rgba(181,211,23,0.25);
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
+      /* ── METHOD CARDS ── */
+      .method-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      .method-card.method-primary {
+        border-color: rgba(181, 211, 23, 0.3);
+      }
 
-    /* ── NOTICE BOX ── */
-    .notice {
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--primary);
-      border-radius: 12px;
-      padding: 16px 20px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.65;
-      margin-top: 20px;
-    }
-    .notice strong { color: var(--text-primary); font-weight: 600; }
+      .method-header {
+        padding: 24px 28px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .method-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+      .badge-instant {
+        background: rgba(181, 211, 23, 0.15);
+        border: 1px solid rgba(181, 211, 23, 0.3);
+        color: var(--primary);
+      }
+      .badge-manual {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+      }
+      .badge-instant::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 6px var(--primary);
+      }
+      .method-header-text h2 {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+      }
+      .method-header-text p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
 
-    /* ── WARNING BOX ── */
-    .warning {
-      background: var(--danger-soft);
-      border: 1px solid var(--danger-border);
-      border-radius: 14px;
-      padding: 20px 24px;
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
-    .warning-icon {
-      font-size: 22px;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .warning-text {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.65;
-    }
-    .warning-text strong { color: var(--text-primary); font-weight: 600; }
+      .method-body {
+        padding: 24px 28px;
+      }
 
-    /* ── CTA BUTTON ── */
-    .cta-wrapper {
-      text-align: center;
-      padding: 8px 0;
-    }
-    .btn-delete {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 16px 36px;
-      border-radius: 14px;
-      font-family: 'Poppins', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-      text-decoration: none;
-      background: var(--danger);
-      color: #fff;
-      box-shadow: 0 4px 24px rgba(239,68,68,0.3);
-      transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-      cursor: pointer;
-      border: none;
-    }
-    .btn-delete:hover {
-      background: #DC2626;
-      box-shadow: 0 6px 32px rgba(239,68,68,0.45);
-      transform: translateY(-2px);
-    }
-    .btn-delete:active { transform: scale(0.97); }
-    .btn-delete svg {
-      width: 18px; height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .cta-subtext {
-      margin-top: 14px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
+      /* ── STEPS LIST ── */
+      .steps-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        counter-reset: step;
+      }
+      .steps-list li {
+        counter-increment: step;
+        display: flex;
+        gap: 14px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.65;
+      }
+      .steps-list li::before {
+        content: counter(step);
+        min-width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: rgba(181, 211, 23, 0.12);
+        border: 1px solid rgba(181, 211, 23, 0.25);
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .steps-list li strong {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
 
-    /* ── TIMELINE ── */
-    .timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      position: relative;
-    }
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 17px;
-      top: 20px;
-      bottom: 20px;
-      width: 1px;
-      background: var(--border);
-    }
-    .timeline-item {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      padding: 0 0 24px 0;
-      position: relative;
-    }
-    .timeline-item:last-child { padding-bottom: 0; }
-    .timeline-dot {
-      width: 34px; height: 34px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
-    }
-    .timeline-body { padding-top: 6px; }
-    .timeline-body strong {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary);
-      display: block;
-      margin-bottom: 4px;
-    }
-    .timeline-body p {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
+      /* ── IN-APP SCREENSHOT MOCK ── */
+      .app-mock {
+        margin: 24px 0 20px;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .mock-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .mock-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        border: 1.5px solid rgba(239, 68, 68, 0.45);
+        background: rgba(239, 68, 68, 0.06);
+        color: var(--danger);
+        cursor: default;
+        user-select: none;
+      }
+      .mock-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .mock-btn.mock-btn-ghost {
+        border-color: rgba(239, 68, 68, 0.22);
+        background: transparent;
+        opacity: 0.65;
+      }
+      .mock-caption {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.5;
+      }
 
-    /* ── DEVELOPER CARD ── */
-    .dev-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px 32px;
-    }
-    .dev-card-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-    }
-    .dev-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-    .dev-row:last-child { margin-bottom: 0; }
-    .dev-row .label {
-      font-weight: 600;
-      color: var(--text-primary);
-      min-width: 90px;
-    }
-    .dev-row .value { color: var(--text-secondary); }
-    .dev-row a {
-      color: var(--primary);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .dev-row a:hover { color: var(--primary-light); text-decoration: underline; }
+      /* ── NOTICE BOX ── */
+      .notice {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--primary);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.65;
+        margin-top: 20px;
+      }
+      .notice strong {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
 
-    /* ── FOOTER ── */
-    footer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 40px 24px;
-    }
-    .footer-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .footer-brand {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-    .footer-brand span { color: var(--primary); }
-    .footer-links {
-      display: flex;
-      gap: 24px;
-      list-style: none;
-    }
-    .footer-links a {
-      font-size: 13px;
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .footer-links a:hover { color: var(--primary); }
-    .footer-copy {
-      font-size: 12px;
-      color: var(--text-muted);
-      text-align: center;
-      width: 100%;
-      margin-top: 8px;
-    }
+      /* ── DATA LIST ── */
+      .data-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        margin-top: 16px;
+      }
+      .data-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+      .data-list li::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--danger);
+        flex-shrink: 0;
+        margin-top: 6px;
+      }
+      .data-list li strong {
+        color: var(--text-primary);
+        font-weight: 600;
+      }
 
-    @media (max-width: 600px) {
-      .page-header { padding: 56px 20px 40px; }
-      .page-body { padding: 40px 20px 72px; gap: 24px; }
-      .card { padding: 24px 20px; }
-      .dev-card { padding: 24px 20px; }
-      .footer-inner { flex-direction: column; align-items: flex-start; }
-    }
-  </style>
-</head>
-<body>
+      /* ── EMAIL CTA ── */
+      .email-cta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 28px 0 8px;
+      }
+      .btn-delete {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 32px;
+        border-radius: 14px;
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        background: var(--danger);
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.28);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          background 0.2s;
+      }
+      .btn-delete:hover {
+        background: var(--danger-dark);
+        box-shadow: 0 6px 28px rgba(239, 68, 68, 0.42);
+        transform: translateY(-2px);
+      }
+      .btn-delete:active {
+        transform: scale(0.97);
+      }
+      .btn-delete svg {
+        width: 17px;
+        height: 17px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .cta-subtext {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+      }
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-inner">
-      <a href="index.html" class="nav-logo">Neno<span>SmartLife</span></a>
-      <a href="index.html" class="nav-back">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        Back to home
-      </a>
-    </div>
-  </nav>
+      /* ── TIMELINE ── */
+      .timeline {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 16px;
+        top: 22px;
+        bottom: 22px;
+        width: 1px;
+        background: var(--border);
+      }
+      .timeline-item {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        padding-bottom: 22px;
+        position: relative;
+      }
+      .timeline-item:last-child {
+        padding-bottom: 0;
+      }
+      .timeline-dot {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        position: relative;
+        z-index: 1;
+      }
+      .timeline-body {
+        padding-top: 5px;
+      }
+      .timeline-body strong {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: block;
+        margin-bottom: 3px;
+      }
+      .timeline-body p {
+        font-size: 12px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
 
-  <!-- PAGE HEADER -->
-  <div class="page-header">
-    <div class="page-header-inner">
-      <p class="page-label">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        Account Deletion
-      </p>
-      <h1>Delete Your Account</h1>
-      <p class="app-name" style="font-size:17px; font-weight:700; margin-bottom:16px; color:var(--primary);">Neno SmartLife</p>
-      <p class="tagline">
-        We're sorry to see you go. You can request the deletion of your account
-        and all associated personal data at any time — no questions asked.
-      </p>
-    </div>
-  </div>
+      /* ── WHAT'S DELETED SHARED CARD ── */
+      .info-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px 32px;
+      }
+      .info-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 4px;
+      }
+      .info-card-title .icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: var(--danger-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        flex-shrink: 0;
+      }
 
-  <!-- BODY -->
-  <div class="page-body">
+      /* ── DEV CARD ── */
+      .dev-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px 32px;
+      }
+      .dev-card-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+      }
+      .dev-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+      .dev-row:last-child {
+        margin-bottom: 0;
+      }
+      .dev-row .label {
+        font-weight: 600;
+        color: var(--text-primary);
+        min-width: 90px;
+      }
+      .dev-row .value {
+        color: var(--text-secondary);
+      }
+      .dev-row a {
+        color: var(--primary);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .dev-row a:hover {
+        color: var(--primary-light);
+        text-decoration: underline;
+      }
 
-    <!-- WARNING -->
-    <div class="warning">
-      <div class="warning-icon">⚠️</div>
-      <div class="warning-text">
-        <strong>This action is permanent.</strong>
-        Once your account and data are deleted they cannot be recovered.
-        All your order history, favourites, and chat messages will be permanently removed.
+      /* ── FOOTER ── */
+      footer {
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 40px 24px;
+      }
+      .footer-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .footer-brand {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      .footer-brand span {
+        color: var(--primary);
+      }
+      .footer-links {
+        display: flex;
+        gap: 24px;
+        list-style: none;
+      }
+      .footer-links a {
+        font-size: 13px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .footer-links a:hover {
+        color: var(--primary);
+      }
+      .footer-copy {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      @media (max-width: 600px) {
+        .page-header {
+          padding: 56px 20px 40px;
+        }
+        .page-body {
+          padding: 40px 20px 72px;
+          gap: 22px;
+        }
+        .method-header {
+          padding: 20px 20px 18px;
+        }
+        .method-body {
+          padding: 20px 20px;
+        }
+        .info-card,
+        .dev-card {
+          padding: 24px 20px;
+        }
+        .footer-inner {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- NAV -->
+    <nav>
+      <div class="nav-inner">
+        <a href="index.html" class="nav-logo">Neno<span>SmartLife</span></a>
+        <a href="index.html" class="nav-back">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+          Back to home
+        </a>
+      </div>
+    </nav>
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-inner">
+        <p class="page-label">Account Deletion</p>
+        <h1>Delete Your Account</h1>
+        <span class="app-name">Neno SmartLife</span>
+        <p class="tagline">
+          We're sorry to see you go. You can delete your account and all
+          associated personal data at any time — instantly from inside the app,
+          or by contacting us directly.
+        </p>
       </div>
     </div>
 
-    <!-- WHAT WILL BE DELETED -->
-    <div class="card">
-      <div class="card-title">
-        <div class="icon icon-danger">🗑️</div>
-        What will be deleted
+    <div class="page-body">
+      <!-- WARNING BANNER -->
+      <div class="warning">
+        <div class="warning-icon">⚠️</div>
+        <div class="warning-text">
+          <strong>This action is permanent and cannot be undone.</strong>
+          All your data will be erased. If you return with the same phone number
+          it will be treated as a completely new account.
+        </div>
       </div>
-      <ul class="data-list">
-        <li><strong>Your account</strong> — your identity in our system, identified by your phone number</li>
-        <li><strong>Your name</strong> — the name you entered when making requests</li>
-        <li><strong>Your phone number</strong> — your primary identifier used across the app</li>
-        <li><strong>Your profile &amp; activity data</strong> — cart items, saved favourites, and preferences</li>
-        <li><strong>Your order &amp; request history</strong> — all past and active purchase requests</li>
-        <li><strong>Your chat messages</strong> — the full conversation history with the store</li>
-        <li><strong>Your device push token</strong> — used to deliver order notifications to your device</li>
-      </ul>
-      <div class="notice">
-        <strong>Note:</strong> Some records may be retained for a limited period where required by law
-        (e.g. transaction records for accounting purposes). All personally identifiable information
-        will be removed or anonymised.
-      </div>
-    </div>
 
-    <!-- HOW TO REQUEST -->
-    <div class="card">
-      <div class="card-title">
-        <div class="icon icon-info">📩</div>
-        How to request deletion
-      </div>
-      <ol class="steps-list">
-        <li>
-          Tap the <strong>Request Account Deletion</strong> button below.
-          It will open your email app with a pre-filled message.
-        </li>
-        <li>
-          Send the email <strong>from the address associated with your account</strong>,
-          or include your registered phone number in the message body so we can identify your account.
-        </li>
-        <li>
-          We will verify your identity, process your request, and send a
-          confirmation once your data has been deleted.
-        </li>
-      </ol>
-    </div>
-
-    <!-- CTA -->
-    <div class="cta-wrapper">
-      <a
-        class="btn-delete"
-        href="mailto:louislukongman@gmail.com?subject=Account%20Deletion%20Request%20%E2%80%94%20Neno%20SmartLife&body=Hello%2C%0A%0AI%20would%20like%20to%20request%20the%20deletion%20of%20my%20account%20and%20all%20associated%20personal%20data%20from%20the%20Neno%20SmartLife%20app.%0A%0ARegistered%20phone%20number%3A%20%5Byour%20phone%20number%5D%0A%0AThank%20you."
-        aria-label="Request Account Deletion by email"
-      >
-        <svg viewBox="0 0 24 24"><polyline points="3 6 12 13 21 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
-        Request Account Deletion
-      </a>
-      <p class="cta-subtext">Opens your email app &nbsp;·&nbsp; louislukongman@gmail.com</p>
-    </div>
-
-    <!-- TIMELINE / WHAT HAPPENS NEXT -->
-    <div class="card">
-      <div class="card-title">
-        <div class="icon icon-clock">⏱️</div>
-        What happens after you submit
-      </div>
-      <div class="timeline">
-        <div class="timeline-item">
-          <div class="timeline-dot">📬</div>
-          <div class="timeline-body">
-            <strong>Request received</strong>
-            <p>We receive your email and log your deletion request.</p>
+      <!-- ══════════════════════════════════════════════
+         METHOD 1 — IN-APP (recommended)
+    ══════════════════════════════════════════════ -->
+      <div class="method-card method-primary">
+        <div class="method-header">
+          <div class="method-badge badge-instant">Instant</div>
+          <div class="method-header-text">
+            <h2>Option 1 — Delete directly from the app</h2>
+            <p>
+              The fastest way. Your data is deleted immediately, no waiting
+              required.
+            </p>
           </div>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-dot">🔍</div>
-          <div class="timeline-body">
-            <strong>Identity verification</strong>
-            <p>We confirm your identity using your phone number or email to prevent unauthorised deletions.</p>
+        <div class="method-body">
+          <ol class="steps-list">
+            <li>
+              Open the <strong>Neno SmartLife</strong> app on your Android
+              device.
+            </li>
+            <li>
+              Tap the <strong>Account</strong> tab at the bottom of the screen.
+            </li>
+            <li>Scroll to the bottom of the Account page.</li>
+            <li>
+              Tap the <strong>"Clear My Data"</strong> button. It will ask you
+              to confirm before anything is deleted.
+            </li>
+            <li>
+              Confirm by tapping <strong>"Delete Everything"</strong> — your
+              account and all personal data are removed instantly.
+            </li>
+          </ol>
+
+          <!-- Visual mock of the button as it appears in-app -->
+          <div class="app-mock">
+            <p class="mock-label">As it appears in the app</p>
+            <div class="mock-btn mock-btn-ghost">
+              <svg viewBox="0 0 24 24">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+              </svg>
+              Clear History
+            </div>
+            <div class="mock-btn">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+                <line x1="17" y1="11" x2="23" y2="11" />
+              </svg>
+              Clear My Data
+            </div>
+            <p class="mock-caption">
+              <em>"Clear History"</em> removes activity only (orders, chat,
+              favourites) but keeps your name and phone.<br />
+              <em>"Clear My Data"</em> removes <strong>everything</strong>,
+              including your name, phone number, and full account.
+            </p>
+          </div>
+
+          <div class="notice">
+            <strong>Note:</strong> "Clear My Data" is only visible when you have
+            a saved identity on the account (name + phone number). If you see
+            only "Clear History", your account has no personal identity stored —
+            your activity data will still be cleared.
           </div>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-dot">🗑️</div>
-          <div class="timeline-body">
-            <strong>Data deleted</strong>
-            <p>Your account and all associated personal data are permanently removed from our systems within <strong>30 days</strong>.</p>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+         WHAT GETS DELETED
+    ══════════════════════════════════════════════ -->
+      <div class="info-card">
+        <div class="info-card-title">
+          <div class="icon">🗑️</div>
+          What will be deleted
+        </div>
+        <ul class="data-list">
+          <li>
+            <strong>Your account</strong> — your identity record, identified by
+            phone number
+          </li>
+          <li>
+            <strong>Your name &amp; phone number</strong> — all personally
+            identifiable information
+          </li>
+          <li>
+            <strong>Saved favourites &amp; cart</strong> — all items you saved
+            or added to cart
+          </li>
+          <li>
+            <strong>Order &amp; request history</strong> — all past and active
+            purchase requests
+          </li>
+          <li>
+            <strong>Chat conversations</strong> — your full message history with
+            the store
+          </li>
+          <li>
+            <strong>Interest signals</strong> — product interactions tracked to
+            your phone number
+          </li>
+          <li>
+            <strong>Device push token</strong> — used to deliver order
+            notifications to your device
+          </li>
+        </ul>
+        <div class="notice">
+          <strong>Legal retention:</strong> Some anonymised transaction records
+          may be kept for a limited period where required by applicable law
+          (e.g. accounting purposes). No personally identifiable information is
+          retained beyond what the law requires.
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+         DIVIDER
+    ══════════════════════════════════════════════ -->
+      <div class="section-divider">or</div>
+
+      <!-- ══════════════════════════════════════════════
+         METHOD 2 — EMAIL REQUEST
+    ══════════════════════════════════════════════ -->
+      <div class="method-card">
+        <div class="method-header">
+          <div class="method-badge badge-manual">Up to 30 days</div>
+          <div class="method-header-text">
+            <h2>Option 2 — Request deletion by email</h2>
+            <p>
+              Can't access the app, or prefer we handle it? Send us a deletion
+              request and we'll take care of it.
+            </p>
           </div>
         </div>
-        <div class="timeline-item">
-          <div class="timeline-dot">✅</div>
-          <div class="timeline-body">
-            <strong>Confirmation sent</strong>
-            <p>You'll receive a confirmation once the deletion is complete.</p>
+        <div class="method-body">
+          <ol class="steps-list">
+            <li>
+              Tap <strong>Request Account Deletion</strong> below — it opens
+              your email app with a pre-filled message.
+            </li>
+            <li>
+              Send the email and include your
+              <strong>registered phone number</strong> so we can locate your
+              account.
+            </li>
+            <li>
+              We'll verify your identity and process the request within
+              <strong>30 days</strong>. You'll receive a confirmation once done.
+            </li>
+          </ol>
+
+          <div class="email-cta">
+            <a
+              class="btn-delete"
+              href="mailto:louislukongman@gmail.com?subject=Account%20Deletion%20Request%20%E2%80%94%20Neno%20SmartLife&body=Hello%2C%0A%0AI%20would%20like%20to%20request%20the%20deletion%20of%20my%20Neno%20SmartLife%20account%20and%20all%20associated%20personal%20data.%0A%0ARegistered%20phone%20number%3A%20%5Benter%20your%20phone%20number%20here%5D%0A%0AThank%20you."
+              aria-label="Request Account Deletion by email"
+            >
+              <svg viewBox="0 0 24 24">
+                <polyline points="3 6 12 13 21 6" />
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+              </svg>
+              Request Account Deletion
+            </a>
+            <p class="cta-subtext">
+              Opens your email app &nbsp;·&nbsp; louislukongman@gmail.com
+            </p>
           </div>
+
+          <!-- What happens next timeline -->
+          <div class="timeline" style="margin-top: 8px">
+            <div class="timeline-item">
+              <div class="timeline-dot">📬</div>
+              <div class="timeline-body">
+                <strong>Request received</strong>
+                <p>We receive your email and log your deletion request.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot">🔍</div>
+              <div class="timeline-body">
+                <strong>Identity verified</strong>
+                <p>
+                  We confirm your phone number to prevent unauthorised
+                  deletions.
+                </p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot">🗑️</div>
+              <div class="timeline-body">
+                <strong>Data deleted</strong>
+                <p>All personal data is permanently removed within 30 days.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot">✅</div>
+              <div class="timeline-body">
+                <strong>Confirmation sent</strong>
+                <p>
+                  You receive a confirmation email once deletion is complete.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+         DEVELOPER INFO
+    ══════════════════════════════════════════════ -->
+      <div class="dev-card">
+        <p class="dev-card-label">Developer &amp; Contact</p>
+        <div class="dev-row">
+          <span class="label">Developer</span>
+          <span class="value">HiFiveTeck</span>
+        </div>
+        <div class="dev-row">
+          <span class="label">App</span>
+          <span class="value">Neno SmartLife (Android)</span>
+        </div>
+        <div class="dev-row">
+          <span class="label">Package</span>
+          <span class="value">com.hifiveteck.neno_smartlife</span>
+        </div>
+        <div class="dev-row">
+          <span class="label">Location</span>
+          <span class="value">Bafoussam, Cameroon</span>
+        </div>
+        <div class="dev-row">
+          <span class="label">Support</span>
+          <span class="value"
+            ><a href="mailto:louislukongman@gmail.com"
+              >louislukongman@gmail.com</a
+            ></span
+          >
+        </div>
+        <div class="dev-row">
+          <span class="label">Privacy</span>
+          <span class="value"
+            ><a href="privacy_policy.html">Privacy Policy</a></span
+          >
         </div>
       </div>
     </div>
+    <!-- /page-body -->
 
-    <!-- DEVELOPER INFO -->
-    <div class="dev-card">
-      <p class="dev-card-label">Developer &amp; Contact</p>
-      <div class="dev-row">
-        <span class="label">Developer</span>
-        <span class="value">HiFiveTeck</span>
+    <!-- FOOTER -->
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-brand">Neno<span>SmartLife</span></div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="privacy_policy.html">Privacy Policy</a></li>
+          <li><a href="delete_account.html">Delete Account</a></li>
+        </ul>
+        <p class="footer-copy">
+          &copy; 2026 Neno SmartLife General Electronics, Bafoussam, Cameroon.
+          All rights reserved.
+        </p>
       </div>
-      <div class="dev-row">
-        <span class="label">App</span>
-        <span class="value">Neno SmartLife (Android)</span>
-      </div>
-      <div class="dev-row">
-        <span class="label">Package</span>
-        <span class="value">com.hifiveteck.neno_smartlife</span>
-      </div>
-      <div class="dev-row">
-        <span class="label">Location</span>
-        <span class="value">Bafoussam, Cameroon</span>
-      </div>
-      <div class="dev-row">
-        <span class="label">Support</span>
-        <span class="value"><a href="mailto:louislukongman@gmail.com">louislukongman@gmail.com</a></span>
-      </div>
-      <div class="dev-row">
-        <span class="label">Privacy</span>
-        <span class="value"><a href="privacy_policy.html">Privacy Policy</a></span>
-      </div>
-    </div>
-
-  </div><!-- /page-body -->
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-brand">Neno<span>SmartLife</span></div>
-      <ul class="footer-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="privacy_policy.html">Privacy Policy</a></li>
-        <li><a href="delete_account.html">Delete Account</a></li>
-      </ul>
-      <p class="footer-copy">&copy; 2026 Neno SmartLife General Electronics, Bafoussam, Cameroon. All rights reserved.</p>
-    </div>
-  </footer>
-
-</body>
+    </footer>
+  </body>
 </html>
