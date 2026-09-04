@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../shared/models/product.dart';
+import 'product_broadcast_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProductService
@@ -20,10 +23,8 @@ class ProductService {
 
   /// Live stream of all products ordered by creation time (newest first).
   Stream<List<Product>> watchProducts() {
-    return _col
-        .orderBy('updatedAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs
+    return _col.orderBy('updatedAt', descending: true).snapshots().map((snap) =>
+        snap.docs
             .map((doc) => Product.fromFirestore(
                 doc as DocumentSnapshot<Map<String, dynamic>>))
             .toList());
@@ -38,12 +39,36 @@ class ProductService {
     data['createdAt'] = FieldValue.serverTimestamp();
 
     final ref = await _col.add(data);
-    return product.copyWith(id: ref.id);
+    final saved = product.copyWith(id: ref.id);
+
+    // Broadcast to all customer devices (non-blocking).
+    if (!product.hidden) {
+      unawaited(ProductBroadcastService.instance.broadcastProduct(
+        productId: saved.id,
+        productName: saved.name,
+        category: saved.category,
+        isNew: true,
+      ));
+    }
+
+    return saved;
   }
 
   /// Overwrites an existing product document (identified by [product.id]).
   Future<void> updateProduct(Product product) async {
-    await _col.doc(product.id).set(product.toFirestore(), SetOptions(merge: true));
+    await _col
+        .doc(product.id)
+        .set(product.toFirestore(), SetOptions(merge: true));
+
+    // Broadcast to all customer devices only if the product is visible.
+    if (!product.hidden) {
+      unawaited(ProductBroadcastService.instance.broadcastProduct(
+        productId: product.id,
+        productName: product.name,
+        category: product.category,
+        isNew: false,
+      ));
+    }
   }
 
   /// Deletes a product by ID.

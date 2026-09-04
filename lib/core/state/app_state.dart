@@ -14,6 +14,7 @@ import '../services/customer_data_service.dart';
 import '../services/interest_request_service.dart';
 import '../services/notification_service.dart';
 import '../services/order_notification_service.dart';
+import '../services/product_broadcast_service.dart';
 import '../services/product_service.dart';
 import '../services/purchase_request_service.dart';
 import '../../shared/models/admin_category.dart';
@@ -58,6 +59,7 @@ class AppStateProviderState extends State<AppStateProvider> {
   StreamSubscription<List<OrderNotification>>? _orderNotifSub;
   StreamSubscription<List<AdminRequest>>? _purchaseRequestSub;
   StreamSubscription? _chatSub;
+  StreamSubscription<List<ProductBroadcast>>? _productBroadcastSub;
 
   // ── Session bridging ───────────────────────────────────────────────────────
   // When admin logs in we snapshot the anonymous customer UID that was active
@@ -617,6 +619,7 @@ class AppStateProviderState extends State<AppStateProvider> {
     _authSub = _authService.authStateChanges.listen(_onAuthStateChanged);
     _subscribeToProducts();
     _subscribeToCategories();
+    _subscribeToProductBroadcasts();
   }
 
   void _subscribeToCategories() {
@@ -635,6 +638,48 @@ class AppStateProviderState extends State<AppStateProvider> {
         // Once products are loaded, restore cart and favourites
         _loadCart();
         _loadFavourites();
+      },
+      onError: (_) {},
+    );
+  }
+
+  // ── Customer: product broadcast notifications ──────────────────────────────
+
+  /// IDs already shown this session — prevents duplicate notifications if
+  /// the stream re-emits on reconnect.
+  final Set<String> _notifiedBroadcastIds = {};
+  bool _broadcastSubInitialized = false;
+
+  void _subscribeToProductBroadcasts() {
+    _productBroadcastSub?.cancel();
+    _broadcastSubInitialized = false;
+    _productBroadcastSub =
+        ProductBroadcastService.instance.watchRecent().listen(
+      (broadcasts) async {
+        // Skip if the current user is the admin — they produced these docs.
+        if (_authStatus == AuthStatus.admin) return;
+
+        // First emission: seed the known-IDs set without notifying.
+        // This prevents showing notifications for products that already
+        // existed before this session started.
+        if (!_broadcastSubInitialized) {
+          for (final b in broadcasts) {
+            _notifiedBroadcastIds.add(b.id);
+          }
+          _broadcastSubInitialized = true;
+          return;
+        }
+
+        // Subsequent emissions: only notify for genuinely new docs.
+        for (final b in broadcasts) {
+          if (_notifiedBroadcastIds.contains(b.id)) continue;
+          _notifiedBroadcastIds.add(b.id);
+          await _notificationService.showNewProductNotification(
+            productName: b.productName,
+            category: b.category,
+            isNew: b.isNew,
+          );
+        }
       },
       onError: (_) {},
     );
@@ -768,6 +813,7 @@ class AppStateProviderState extends State<AppStateProvider> {
     _purchaseRequestSub?.cancel();
     _orderNotifSub?.cancel();
     _chatSub?.cancel();
+    _productBroadcastSub?.cancel();
     super.dispose();
   }
 

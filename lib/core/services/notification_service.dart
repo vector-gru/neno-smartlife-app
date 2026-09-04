@@ -28,6 +28,12 @@ const _kChannelId = 'neno_interest';
 const _kChannelName = 'Customer Interest';
 const _kChannelDesc = 'Alerts when a customer expresses interest in a product';
 
+/// Separate channel for store-wide product announcements.
+const _kProductChannelId = 'neno_products';
+const _kProductChannelName = 'New Products';
+const _kProductChannelDesc =
+    'Alerts when new or updated products are added to the store';
+
 /// Top-level background message handler — must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -83,6 +89,17 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(channel);
+
+      const productChannel = AndroidNotificationChannel(
+        _kProductChannelId,
+        _kProductChannelName,
+        description: _kProductChannelDesc,
+        importance: Importance.defaultImportance,
+      );
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(productChannel);
     }
   }
 
@@ -244,6 +261,46 @@ class NotificationService {
       DateTime.now().millisecondsSinceEpoch ~/ 1000 & 0x7FFFFFFF,
       '💬 $senderName — $productName',
       preview.isNotEmpty ? preview : 'New message',
+      details,
+    );
+  }
+
+  /// Displays a notification when a new or updated product is listed in
+  /// the store. Delivered on a lower-priority channel so it doesn't
+  /// interrupt the user as aggressively as order/chat alerts.
+  Future<void> showNewProductNotification({
+    required String productName,
+    required String category,
+    required bool isNew,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      _kProductChannelId,
+      _kProductChannelName,
+      channelDescription: _kProductChannelDesc,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      icon: '@mipmap/ic_launcher',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: false,
+      presentSound: false,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final title =
+        isNew ? '🆕 New in Store — $productName' : '🔄 Updated — $productName';
+    final body = isNew
+        ? 'A new $category just landed. Tap to check it out!'
+        : 'Details updated on $productName. Take another look!';
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000 & 0x7FFFFFFF,
+      title,
+      body,
       details,
     );
   }
