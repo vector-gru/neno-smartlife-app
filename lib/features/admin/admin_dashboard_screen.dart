@@ -130,19 +130,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 onTap: () => setState(() => _navIndex = 0),
               ),
               _NavItem(
-                icon: Icons.receipt_long_outlined,
+                icon: Icons.assignment_rounded,
                 label: 'Requests',
                 selected: _navIndex == 1,
                 onTap: () => setState(() => _navIndex = 1),
               ),
               _NavItem(
-                icon: Icons.inventory_2_outlined,
+                icon: Icons.inventory_2_rounded,
                 label: 'Products',
                 selected: _navIndex == 2,
                 onTap: () => setState(() => _navIndex = 2),
               ),
               _NavItem(
-                icon: Icons.settings_outlined,
+                icon: Icons.settings_rounded,
                 label: 'Settings',
                 selected: _navIndex == 3,
                 onTap: () => setState(() => _navIndex = 3),
