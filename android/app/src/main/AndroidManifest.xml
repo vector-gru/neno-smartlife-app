@@ -1,9 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.CAMERA"/>
-    <!-- READ_MEDIA_IMAGES for Android 13+; READ_EXTERNAL_STORAGE for older -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- READ_EXTERNAL_STORAGE only needed for Android 9 and below (API 28-) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32"/>
+        android:maxSdkVersion="28"/>
     <!-- Required for push notifications on Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
