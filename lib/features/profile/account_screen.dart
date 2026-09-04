@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/state/app_state.dart';
@@ -161,6 +164,14 @@ class _AccountScreenState extends State<AccountScreen> {
                 title: l10n.accountContactAdmin,
                 titleColor: AppColors.primaryDark,
                 onTap: () => AppRouter.goToCustomerChats(context),
+              ),
+              _divider(),
+              _MenuRow(
+                icon: Icons.share_rounded,
+                iconBg: const Color(0xFFEEF6D6),
+                title: 'Share the App',
+                subtitle: 'Tell friends about Neno SmartLife',
+                onTap: () => _shareApp(),
               ),
             ],
           ),
@@ -644,6 +655,40 @@ class _AccountScreenState extends State<AccountScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _shareApp() async {
+    const shareText =
+        '📱✨ Check out Neno SmartLife — the free app to browse and order '
+        'the latest phones, TVs, laptops, smart watches & more from '
+        'Bafoussam, Cameroon. No sign-up needed!\n\n'
+        'Download here: https://play.google.com/store/apps/details?id=com.hifivetech.neno_smartlife';
+
+    XFile? imageFile;
+    try {
+      final ByteData data = await rootBundle.load('assets/store_icon.png');
+      final Directory tmpDir = await getTemporaryDirectory();
+      final File tmpFile = File('${tmpDir.path}/neno_smartlife_share.png');
+      await tmpFile.writeAsBytes(data.buffer.asUint8List());
+      imageFile = XFile(tmpFile.path, mimeType: 'image/png');
+    } catch (e, st) {
+      // Fall back to text-only if asset loading fails
+      assert(() {
+        debugPrint('_shareApp image load failed: $e\n$st');
+        return true;
+      }());
+    }
+
+    if (imageFile != null) {
+      await Share.shareXFiles(
+        [imageFile],
+        subject: 'Neno SmartLife — Electronics Store App',
+        text: shareText,
+      );
+    } else {
+      await Share.share(shareText,
+          subject: 'Neno SmartLife — Electronics Store App');
+    }
   }
 
   void _showComingSoon(BuildContext context, AppLocalizations l10n) {
