@@ -549,13 +549,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => setState(() => _bottomNavIndex = 1),
               ),
               _NavItem(
-                icon: Icons.receipt_long_outlined,
+                icon: Icons.inventory_2_rounded,
                 label: l10n.navOrders,
                 isSelected: _bottomNavIndex == 2,
                 onTap: () => setState(() => _bottomNavIndex = 2),
               ),
               _NavItem(
-                icon: Icons.person_outline_rounded,
+                icon: Icons.person_rounded,
                 label: l10n.navAccount,
                 isSelected: _bottomNavIndex == 3,
                 onTap: () => setState(() => _bottomNavIndex = 3),

@@ -81,14 +81,6 @@ class _AccountScreenState extends State<AccountScreen> {
                 subtitle: l10n.accountShippingSub,
                 onTap: () => _showComingSoon(context, l10n),
               ),
-              _divider(),
-              _MenuRow(
-                icon: Icons.credit_card_outlined,
-                iconBg: const Color(0xFFEEF6D6),
-                title: l10n.accountPayment,
-                subtitle: l10n.accountPaymentSub,
-                onTap: () => _showComingSoon(context, l10n),
-              ),
             ],
           ),
 
