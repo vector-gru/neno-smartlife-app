@@ -50,6 +50,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
   late List<MapEntry<String, String>> _specs;
   late String _stockStatus;
   late ProductCondition _condition;
+  late bool _hidden;
 
   @override
   void initState() {
@@ -73,6 +74,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         p.specifications.entries.where((e) => e.key != 'Quantity').toList();
     _stockStatus = p.stockStatus.isEmpty ? 'in_stock' : p.stockStatus;
     _condition = p.condition;
+    _hidden = p.hidden;
   }
 
   @override
@@ -263,6 +265,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
         quantity: int.tryParse(_qtyCtrl.text.trim()) ?? 0,
         specifications: Map.fromEntries(_specs),
         condition: _condition,
+        hidden: _hidden,
       );
 
       // 3. Write to Firestore.
@@ -424,7 +427,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
                       ),
                     )
                   : Text(
-                      'Save Product',
+                      widget.isNew ? 'Save Product' : 'Update Product',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -798,6 +801,84 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> {
       _ConditionSelector(
         value: _condition,
         onChanged: (v) => setState(() => _condition = v),
+      ),
+      const SizedBox(height: 20),
+      // ── Hide / Unhide ──────────────────────────────────────────────────
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _hidden
+              ? AppColors.error.withValues(alpha: 0.06)
+              : const Color(0xFFF4F4F4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _hidden
+                ? AppColors.error.withValues(alpha: 0.3)
+                : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (_hidden)
+                        Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'HIDDEN',
+                            style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white),
+                          ),
+                        ),
+                      Text(
+                        _hidden ? 'Product is Hidden' : 'Hide Product',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              _hidden ? AppColors.error : AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _hidden
+                        ? 'Not visible to customers — toggle to show again'
+                        : 'Hide from the customer store without deleting',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: _hidden
+                          ? AppColors.error.withValues(alpha: 0.7)
+                          : AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch.adaptive(
+              value: _hidden,
+              onChanged: (v) => setState(() => _hidden = v),
+              activeThumbColor: Colors.white,
+              activeTrackColor: AppColors.error,
+              inactiveThumbColor: Colors.white,
+              inactiveTrackColor: const Color(0xFFDDDDDD),
+            ),
+          ],
+        ),
       ),
     ]);
   }

@@ -133,7 +133,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Product> get _filteredProducts {
-    var products = context.appState.productsByCategory(_selectedCategory);
+    var products = context.appState
+        .productsByCategory(_selectedCategory)
+        .where((p) => !p.hidden)
+        .toList();
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
       products = products
@@ -452,7 +455,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ─── Recently added horizontal row ───────────────────────────────────────
   Widget _buildRecentlyAddedSection(AppLocalizations l10n) {
-    final recent = context.appState.products.take(10).toList();
+    final recent =
+        context.appState.products.where((p) => !p.hidden).take(10).toList();
     if (recent.isEmpty) return const SizedBox.shrink();
 
     return Column(

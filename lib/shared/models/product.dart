@@ -28,6 +28,7 @@ class Product {
   final List<Product> frequentlyBoughtWith;
   final ProductCondition condition;
   final int quantity;
+  final bool hidden;
 
   const Product({
     required this.id,
@@ -50,6 +51,7 @@ class Product {
     this.frequentlyBoughtWith = const [],
     this.condition = ProductCondition.newProduct,
     this.quantity = 0,
+    this.hidden = false,
   });
 
   bool get isNew => condition == ProductCondition.newProduct;
@@ -108,6 +110,7 @@ class Product {
       'condition':
           condition == ProductCondition.refurbished ? 'refurbished' : 'new',
       'quantity': quantity,
+      'hidden': hidden,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -140,6 +143,7 @@ class Product {
           ? ProductCondition.refurbished
           : ProductCondition.newProduct,
       quantity: d['quantity'] as int? ?? 0,
+      hidden: d['hidden'] as bool? ?? false,
     );
   }
 
@@ -165,6 +169,7 @@ class Product {
     Map<String, String>? specifications,
     ProductCondition? condition,
     int? quantity,
+    bool? hidden,
   }) {
     return Product(
       id: id ?? this.id,
@@ -186,6 +191,7 @@ class Product {
       specifications: specifications ?? this.specifications,
       condition: condition ?? this.condition,
       quantity: quantity ?? this.quantity,
+      hidden: hidden ?? this.hidden,
     );
   }
 }
