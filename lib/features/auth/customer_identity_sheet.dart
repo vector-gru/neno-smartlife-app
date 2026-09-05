@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/auth/auth_service.dart';
+import '../../core/auth/auth_models.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/state/app_state.dart';
 
@@ -51,26 +55,36 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // ── Phone-lookup state ─────────────────────────────────────────────────────
+  bool _isLookingUp = false;
+  CustomerIdentity? _matchedIdentity; // non-null = returning customer found
+  bool _lookupDone = false; // true once lookup returned (match or no match)
+  Timer? _debounce;
+
+  // Name is editable ONLY when lookup is done AND no match was found.
+  bool get _nameEditable => _lookupDone && _matchedIdentity == null;
+  // Name is locked (auto-filled) when a match was found.
+  bool get _nameLocked => _matchedIdentity != null;
+
   bool _prefilled = false;
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill happens in didChangeDependencies — not here — because
-    // accessing context.appState (an InheritedWidget lookup) is forbidden
-    // inside initState().
+    _phoneController.addListener(_onPhoneChanged);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Only pre-fill once; didChangeDependencies can fire more than once.
     if (_prefilled) return;
     _prefilled = true;
     final identity = context.appState.customerIdentity;
     if (identity != null) {
+      // Pre-fill existing session — treat as a known match immediately.
+      _matchedIdentity = identity;
+      _lookupDone = true;
       _nameController.text = identity.fullName;
-      // Strip +237 prefix so it doesn't duplicate the prefix display
       final phone = identity.phone;
       _phoneController.text =
           phone.startsWith('+237') ? phone.substring(4).trimLeft() : phone;
@@ -79,10 +93,59 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _phoneController.removeListener(_onPhoneChanged);
     _nameController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
+
+  // ── Phone change handler ───────────────────────────────────────────────────
+
+  void _onPhoneChanged() {
+    // Reset all lookup state whenever the phone number changes.
+    if (_matchedIdentity != null || _lookupDone) {
+      setState(() {
+        _matchedIdentity = null;
+        _lookupDone = false;
+        _nameController.clear();
+      });
+    }
+
+    _debounce?.cancel();
+    final digits = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+
+    // Only look up once we have a plausible number length.
+    if (digits.length < 8) return;
+
+    _debounce = Timer(const Duration(milliseconds: 600), () => _lookupPhone());
+  }
+
+  Future<void> _lookupPhone() async {
+    final rawPhone = _phoneController.text.trim();
+    final fullPhone = rawPhone.startsWith('+237') ? rawPhone : '+237 $rawPhone';
+
+    setState(() => _isLookingUp = true);
+    try {
+      final found = await AuthService.instance.findCustomerByPhone(fullPhone);
+      if (!mounted) return;
+      setState(() {
+        _lookupDone = true;
+        if (found != null) {
+          _matchedIdentity = found;
+          _nameController.text = found.fullName;
+        }
+        // If no match, _nameEditable becomes true — user can type their name.
+      });
+    } catch (_) {
+      // On error, allow the user to type their name so they're not stuck.
+      if (mounted) setState(() => _lookupDone = true);
+    } finally {
+      if (mounted) setState(() => _isLookingUp = false);
+    }
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -185,33 +248,14 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _FieldLabel('Full name'), const SizedBox(height: 6),
-                TextFormField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.next,
-                  style: GoogleFonts.poppins(
-                      fontSize: 14, color: AppColors.textPrimary),
-                  decoration: _inputDecoration(
-                    hint: 'e.g. Marie Kamgaing',
-                    icon: Icons.person_outline_rounded,
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return 'Please enter your full name';
-                    }
-                    if (v.trim().length < 2) return 'Name is too short';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                // ── Phone number (first) ────────────────────────────────
                 const _FieldLabel('Phone number'),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
+                  textInputAction: TextInputAction.next,
+                  autofocus: true,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9\s]')),
                   ],
@@ -221,6 +265,19 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
                     hint: '6XX XXX XXX',
                     icon: Icons.phone_outlined,
                     prefix: '+237 ',
+                    suffix: _isLookingUp
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : _matchedIdentity != null
+                            ? const Icon(Icons.check_circle_rounded,
+                                color: AppColors.success, size: 18)
+                            : null,
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
@@ -230,6 +287,82 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
                     if (digits.length < 8) {
                       return 'Enter a valid Cameroonian number';
                     }
+                    return null;
+                  },
+                ),
+
+                // ── Returning customer banner ───────────────────────────
+                if (_matchedIdentity != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.success.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.waving_hand_rounded,
+                            size: 16, color: AppColors.success),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Welcome back! Your name has been filled in.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // ── Full name (second) ──────────────────────────────────
+                const _FieldLabel('Full name'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.done,
+                  // Editable only after lookup confirms no existing account.
+                  readOnly: !_nameEditable,
+                  onFieldSubmitted: _nameEditable ? (_) => _submit() : null,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: _nameLocked
+                        ? AppColors.textSecondary
+                        : !_nameEditable
+                            ? AppColors.textMuted
+                            : AppColors.textPrimary,
+                  ),
+                  decoration: _inputDecoration(
+                    hint: _isLookingUp
+                        ? 'Checking…'
+                        : !_lookupDone
+                            ? 'Enter phone number first'
+                            : 'e.g. Marie Kamgaing',
+                    icon: Icons.person_outline_rounded,
+                    locked: !_nameEditable,
+                    lockIcon: _isLookingUp
+                        ? Icons.hourglass_top_rounded
+                        : !_lookupDone
+                            ? Icons.lock_outline_rounded
+                            : Icons.lock_outline_rounded,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Please enter your full name';
+                    }
+                    if (v.trim().length < 2) return 'Name is too short';
                     return null;
                   },
                 ),
@@ -307,6 +440,9 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
     required String hint,
     required IconData icon,
     String? prefix,
+    Widget? suffix,
+    bool locked = false,
+    IconData lockIcon = Icons.lock_outline_rounded,
   }) {
     return InputDecoration(
       hintText: hint,
@@ -317,8 +453,19 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
+      suffixIcon: locked
+          ? Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(lockIcon, size: 16, color: AppColors.textMuted),
+            )
+          : suffix != null
+              ? Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: suffix,
+                )
+              : null,
       filled: true,
-      fillColor: const Color(0xFFF4F4F4),
+      fillColor: locked ? const Color(0xFFEEEEEE) : const Color(0xFFF4F4F4),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -331,7 +478,9 @@ class _CustomerIdentitySheetState extends State<CustomerIdentitySheet> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        borderSide: locked
+            ? BorderSide.none
+            : const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

@@ -138,6 +138,10 @@ class AuthService {
   /// the brief window after anonymous sign-in before the token propagates).
   Future<CustomerIdentity?> findCustomerByPhone(String phone) async {
     try {
+      // Ensure an anonymous session exists so the Firestore query has a
+      // valid auth token — the sheet calls this before saveCustomerIdentity
+      // which is the normal place anonymous sign-in happens.
+      await ensureAnonymousSession();
       final snap = await _db
           .collection(_customersCollection)
           .where('phone', isEqualTo: phone.trim())
@@ -147,9 +151,8 @@ class AuthService {
       final doc = snap.docs.first;
       return CustomerIdentity.fromMap(doc.id, doc.data());
     } catch (_) {
-      // If the query is denied (e.g. token not yet propagated after fresh
-      // anonymous sign-in), treat it as "no existing customer found" and
-      // continue — the identity will be saved as a new document.
+      // If the query is denied or fails for any reason, treat it as
+      // "no existing customer found" — the identity will be saved as new.
       return null;
     }
   }
