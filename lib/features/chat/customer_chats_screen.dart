@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
@@ -98,6 +99,44 @@ class CustomerChatsScreen extends StatelessWidget {
           color: AppColors.textPrimary,
         ),
       ),
+      actions: [
+        Tooltip(
+          message: 'Chat on WhatsApp',
+          child: GestureDetector(
+            onTap: () => launchUrl(
+              Uri.parse('https://wa.me/qr/TMOBUKHTEXKNG1'),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF25D366),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/icons/whatsapp.png',
+                    width: 18,
+                    height: 18,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'WhatsApp',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

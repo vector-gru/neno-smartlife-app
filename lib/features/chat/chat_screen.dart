@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
@@ -14,6 +15,9 @@ import '../../core/services/chat_service.dart';
 
 const _kMomoNumber = '679362871';
 const _kMomoName = 'Nelson Ngehmi';
+
+/// Admin's WhatsApp short link — opens directly in the admin's inbox.
+const _kAdminWhatsAppLink = 'https://wa.me/qr/TMOBUKHTEXKNG1';
 
 // ── English ────────────────────────────────────────────────────────────────
 const _kMomoTextEn = '💛 MTN MoMo Payment Details\n\n'
@@ -128,6 +132,33 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// Sends the hand-off message in-chat then opens WhatsApp with a
+  /// pre-written message referencing the product.
+  Future<void> _continueOnWhatsApp() async {
+    // 1. Post an automated message in the in-app thread first.
+    await _send(
+      overrideText: '👋 I\'d like to continue this conversation on WhatsApp. '
+          'Please reach out to me there — I\'ll be messaging you about '
+          '"${widget.productName}".',
+    );
+
+    // 2. Build the WhatsApp deep-link with a pre-written message.
+    final waText = Uri.encodeComponent(
+      'Hello Neno SmartLife! 👋\n\n'
+      'I\'m interested in: *${widget.productName}*\n\n'
+      'I was chatting with you on the Neno SmartLife app and would like '
+      'to continue here. Could you help me with more details?',
+    );
+    final uri = Uri.parse('https://wa.me/qr/TMOBUKHTEXKNG1?text=$waText');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      // Fallback: open the plain QR link without pre-filled text.
+      await launchUrl(
+        Uri.parse(_kAdminWhatsAppLink),
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
@@ -207,6 +238,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 type: 'thankyou',
               ),
             ),
+
+          // Customer-only WhatsApp hand-off bar
+          if (!widget.isAdmin) _WhatsAppBar(onTap: _continueOnWhatsApp),
 
           _InputBar(
             controller: _textController,
@@ -1043,6 +1077,63 @@ class _DateSeparator extends StatelessWidget {
           ),
           const Expanded(child: Divider(color: AppColors.border, height: 1)),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WhatsApp hand-off bar (customer only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _WhatsAppBar extends StatelessWidget {
+  final VoidCallback onTap;
+  const _WhatsAppBar({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F9EE),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFF25D366).withValues(alpha: 0.4),
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // WhatsApp logo
+              Image.asset(
+                'assets/icons/whatsapp.png',
+                width: 22,
+                height: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Continue on WhatsApp',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF128C7E),
+                ),
+              ),
+              const Spacer(),
+              const Icon(
+                Icons.open_in_new_rounded,
+                size: 15,
+                color: Color(0xFF25D366),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
